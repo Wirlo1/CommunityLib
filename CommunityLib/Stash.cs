@@ -8,6 +8,7 @@ using StashUI = Loki.Game.LokiPoe.InGameState.StashUi;
 
 namespace CommunityLib
 {
+    //Testingzs
     public class Stash
     {
         public delegate bool FindItemDelegate(Item item);
