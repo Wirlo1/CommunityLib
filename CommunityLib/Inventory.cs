@@ -77,6 +77,16 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// Returns an inventory wrapper based on the inventory slot referenced
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static InventoryControlWrapper GetWrapperBySlot(InventorySlot type)
+        {
+            return LokiPoe.InGameState.InventoryUi.AllInventoryControls.FirstOrDefault(ic => ic.Inventory.PageSlot == type);
+        }
+
+        /// <summary>
         /// This function returns an item depending on the slot referenced
         /// </summary>
         /// <param name="type"></param>
