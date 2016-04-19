@@ -8,7 +8,7 @@ using Loki.Bot;
 
 namespace CommunityLib
 {
-    class Task
+    class Tasks
     {
         private static readonly TaskManager GrindBotTaskManager = Communication.GetCurrentBotTaskManager();
 
