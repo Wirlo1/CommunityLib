@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace CommunityLib
 {
     public static class Data
     {
-        public static readonly List<string> CurrencyList = new List<string>
+        private static readonly string[] Currency =
         {
             "Scroll of Wisdom", "Portal Scroll", "Orb of Transmutation",
             "Orb of Augmentation", "Orb of Alteration", "Jeweller's Orb",
@@ -14,5 +15,8 @@ namespace CommunityLib
             "Exalted Orb", "Chaos Orb", "Blessed Orb", "Divine Orb",
             "Orb of Scouring", "Orb of Regret", "Vaal Orb", "Mirror of Kalandra"
         };
+
+        public static readonly ReadOnlyCollection<string> CurrencyList = new ReadOnlyCollection<string>(Currency);
+
     }
 }
