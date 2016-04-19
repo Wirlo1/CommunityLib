@@ -10,7 +10,7 @@ namespace CommunityLib
 {
     class Task
     {
-        private static readonly TaskManager GrindBotTaskManager = Communication.GetGrindBotTaskManager();
+        private static readonly TaskManager GrindBotTaskManager = Communication.GetCurrentBotTaskManager();
 
         public enum AddType
         {
@@ -73,7 +73,7 @@ namespace CommunityLib
         {
             if (!GrindBotTaskManager.Remove(name))
             {
-                Log.ErrorFormat("[TaskHelpers] Fail to remove \"{0}\".", name);
+                CommunityLib.Log.ErrorFormat("[TaskHelpers] Fail to remove \"{0}\".", name);
                 if (stoponerror) BotManager.Stop();
             }
         }

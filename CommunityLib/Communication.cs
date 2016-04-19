@@ -30,6 +30,6 @@ namespace CommunityLib
         /// Returns current bot to operate with
         /// </summary>
         /// <returns></returns>
-        public static TaskManager GetGrindBotTaskManager() { return (TaskManager)BotManager.CurrentBot.Execute("GetTaskManager"); }
+        public static TaskManager GetCurrentBotTaskManager() { return (TaskManager)BotManager.CurrentBot.Execute("GetTaskManager"); }
     }
 }
