@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Loki.Bot;
 using Loki.Common;
 
 namespace CommunityLib
