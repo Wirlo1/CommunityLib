@@ -77,6 +77,16 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// Returns an inventory wrapper based on the inventory slot referenced
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static InventoryControlWrapper GetWrapperBySlot(InventorySlot type)
+        {
+            return LokiPoe.InGameState.InventoryUi.AllInventoryControls.FirstOrDefault(ic => ic.Inventory.PageSlot == type);
+        }
+
+        /// <summary>
         /// This function returns an item depending on the slot referenced
         /// </summary>
         /// <param name="type"></param>
@@ -184,6 +194,28 @@ namespace CommunityLib
                 return ApplyCursorResult.ProcessHookManagerNotEnabled;
 
             return err;
+        }
+
+        public static async Task<bool> SplitAndPlaceItemInMainInventory(InventoryControlWrapper wrapper, Item item, int pickupAmount)
+        {
+            CommunityLib.Log.DebugFormat("[SplitAndPlaceItemInMainInventory] Spliting up stacks. Getting {0} items.", pickupAmount);
+            var error = wrapper.SplitStack(item.LocalId, pickupAmount);
+            //We assume it's currency stash tab, do not use LocalId with it
+            if (error == SplitStackResult.Unsupported)
+                error = wrapper.SplitStack(pickupAmount);
+
+            if (error != SplitStackResult.None)
+            {
+                CommunityLib.Log.ErrorFormat("[SplitAndPlaceItemInMainInventory] Failed to split failed. Split Error: {0}", error);
+                return false;
+            }
+
+            await Coroutines.LatencyWait();
+            await Coroutines.ReactionWait();
+
+            await Inputs.ClearCursorTask();
+
+            return true;
         }
     }
 }

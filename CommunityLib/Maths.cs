@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Loki.Bot;
 using Loki.Common;
 
 namespace CommunityLib
@@ -38,7 +39,6 @@ namespace CommunityLib
             return IsInCircle(yourPos.X, yourPos.Y, circlePos.X, circlePos.Y, radius);
         }
         
-
         /// <summary>
         /// Calculate a point (vector) on the border of the circle, based on radius and angle
         /// </summary>

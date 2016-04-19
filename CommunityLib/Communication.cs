@@ -25,5 +25,11 @@ namespace CommunityLib
             // Return the gathered value
             return (T)Convert.ChangeType(value, typeof(T));
         }
+
+        /// <summary>
+        /// Returns current bot to operate with
+        /// </summary>
+        /// <returns></returns>
+        public static TaskManager GetCurrentBotTaskManager() { return (TaskManager)BotManager.CurrentBot.Execute("GetTaskManager"); }
     }
 }

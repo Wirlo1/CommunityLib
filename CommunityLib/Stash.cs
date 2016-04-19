@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Buddy.Coroutines;
 using Loki.Bot.Logic.Bots.OldGrindBot;
 using Loki.Game;
 using Loki.Game.Objects;
@@ -8,7 +10,6 @@ using StashUI = Loki.Game.LokiPoe.InGameState.StashUi;
 
 namespace CommunityLib
 {
-    //Testingzs
     public class Stash
     {
         public delegate bool FindItemDelegate(Item item);
@@ -136,7 +137,71 @@ namespace CommunityLib
         /// <returns>SwitchToTabResult enum entry</returns>
         public static SwitchToTabResult GoToLastTab()
         {
-            return StashUI.TabControl.SwitchToTabMouse(StashUI.TabControl.TabNames.Count - 1);
+            return StashUI.TabControl.SwitchToTabMouse(StashUI.TabControl.LastTabIndex);
+        }
+
+        /// <summary>
+        /// Opens the stash at typed tab name
+        /// </summary>
+        /// <param name="stashTabName">If set to null or empty, first tab of the stash will be opened</param>
+        /// <returns></returns>
+        public static async Task<bool> OpenStashTabTask(string stashTabName = "")
+        {
+            //open stash
+            if (!StashUI.IsOpened)
+            {
+                var isOpenedErr = await Coroutines.OpenStash();
+                await Coroutines.WaitForStashPanel();
+                if (isOpenedErr != Coroutines.OpenStashError.None)
+                {
+                    CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to open the stash. Error: {0}", isOpenedErr);
+                    return false;
+                }
+            }
+
+            if (string.IsNullOrEmpty(stashTabName))
+            {
+                var isSwitchedFtErr = GoToFirstTab(); //Stash.GoToFirstTab()
+                if (isSwitchedFtErr != SwitchToTabResult.None)
+                {
+                    CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the first tab");
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (StashUI.TabControl.CurrentTabName != stashTabName)
+            {
+                var isSwitchedErr = StashUI.TabControl.SwitchToTabKeyboard(stashTabName);
+                if (isSwitchedErr != SwitchToTabResult.None)
+                {
+                    CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the tab: {0}", isSwitchedErr);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Waits for a stash tab to change. Pass -1 to lastId to wait for the initial tab.
+        /// </summary>
+        /// <param name="lastId">The last InventoryId before changing tabs.</param>
+        /// <param name="timeout">The timeout of the function.</param>
+        /// <returns>true if the tab was changed and false otherwise.</returns>
+        public static async Task<bool> WaitForStashTabChange(int lastId = -1, int timeout = 5000)
+        {
+            var sw = Stopwatch.StartNew();
+            var invTab = StashUI.StashTabInfo;
+            while (invTab == null || invTab.InventoryId == lastId)
+            {
+                await Coroutine.Sleep(1);
+                invTab = StashUI.StashTabInfo;
+                if (sw.ElapsedMilliseconds > timeout)
+                    return false;
+            }
+            return true;
         }
     }
 }
