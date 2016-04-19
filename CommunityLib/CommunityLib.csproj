@@ -32,26 +32,26 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Dafuqdude">
-      <HintPath>..\..\..\A_Exb\BETA\Dafuqdude.exe</HintPath>
+      <HintPath>..\..\..\..\A_Exb\BETA\Dafuqdude.exe</HintPath>
     </Reference>
     <Reference Include="ExilebuddyBETA, Version=0.2.4075.1250, Culture=neutral, PublicKeyToken=8dde325853d11466, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\PoE\ExileBuddy\ExilebuddyBETA.exe</HintPath>
     </Reference>
     <Reference Include="GreyMagic">
-      <HintPath>..\..\..\A_Exb\BETA\GreyMagic.dll</HintPath>
+      <HintPath>..\..\..\..\A_Exb\BETA\GreyMagic.dll</HintPath>
     </Reference>
     <Reference Include="IronPython">
-      <HintPath>..\..\..\A_Exb\BETA\IronPython.dll</HintPath>
+      <HintPath>..\..\..\..\A_Exb\BETA\IronPython.dll</HintPath>
     </Reference>
     <Reference Include="log4net">
-      <HintPath>..\..\..\A_Exb\BETA\log4net.dll</HintPath>
+      <HintPath>..\..\..\..\A_Exb\BETA\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Scripting.Metadata">
-      <HintPath>..\..\..\A_Exb\BETA\Microsoft.Scripting.Metadata.dll</HintPath>
+      <HintPath>..\..\..\..\A_Exb\BETA\Microsoft.Scripting.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\A_Exb\BETA\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\..\A_Exb\BETA\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
