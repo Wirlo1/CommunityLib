@@ -30,5 +30,14 @@
             ItemFoundInTab,
             ItemNotFoundInTab,
         }
+
+        public enum FastGoToHideoutResult
+        {
+            None,
+            NotInTown,
+            NoHideout,
+            TimeOut,
+
+        }
     }
 }
