@@ -85,7 +85,7 @@ namespace CommunityLib
             {             
                 // If the item has no occurences in this tab, switch to the next one
                 var it = FindItemInStashTab(itemName);
-                if (it.Item == null)
+                if (it == null)
                 {
                     // On last tab? break execution
                     if (StashUI.TabControl.IsOnLastTab)
