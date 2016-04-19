@@ -71,6 +71,7 @@
     <Compile Include="CommunityLib.cs" />
     <Compile Include="Actor.cs" />
     <Compile Include="Communication.cs" />
+    <Compile Include="Data.cs" />
     <Compile Include="Dialog.cs" />
     <Compile Include="Inputs.cs" />
     <Compile Include="Inventory.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="Results.cs" />
     <Compile Include="Stash.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tasks.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
