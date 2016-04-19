@@ -34,6 +34,10 @@
     <Reference Include="Dafuqdude">
       <HintPath>..\..\..\A_Exb\BETA\Dafuqdude.exe</HintPath>
     </Reference>
+    <Reference Include="ExilebuddyBETA, Version=0.2.4075.1250, Culture=neutral, PublicKeyToken=8dde325853d11466, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\PoE\ExileBuddy\ExilebuddyBETA.exe</HintPath>
+    </Reference>
     <Reference Include="GreyMagic">
       <HintPath>..\..\..\A_Exb\BETA\GreyMagic.dll</HintPath>
     </Reference>
