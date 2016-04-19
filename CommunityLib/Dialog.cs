@@ -7,6 +7,73 @@ namespace CommunityLib
 {
     public class Dialog
     {
+
+        /// <summary>
+        /// Opens the NPC buy Panel.
+        /// </summary>
+        /// <param name="npcName"> If the parameter is null or empty, default NPC name will be used</param>
+        /// <returns></returns>
+        public static async Task<bool> OpenNpcBuyPanel( string npcName = "" )
+        {
+            if ( string.IsNullOrEmpty(npcName) )
+                npcName = Actor.TownNpcName;
+
+            if (npcName == "")
+            {
+                CommunityLib.Log.ErrorFormat("[OpenNpcBuyPanel] TownNpcName returned an empty string.");
+                return false;
+            }
+
+            if (!await TalkToNpc(npcName))
+                return false;
+
+            var isBuyDialogOpen = LokiPoe.InGameState.NpcDialogUi.PurchaseItems();
+            await Coroutines.WaitForPurchasePanel();
+
+            if (isBuyDialogOpen != LokiPoe.InGameState.ConverseResult.None)
+            {
+                CommunityLib.Log.ErrorFormat("[OpenNpcBuyPanel] Fail open buy dialog. Error: {0}", isBuyDialogOpen);
+                return false;
+            }
+
+            CommunityLib.Log.DebugFormat("[OpenNpcBuyPanel] {0}'s Buy Panel opened successfully", npcName);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Opens the NPC buy Panel.
+        /// </summary>
+        /// <param name="npcName"> If the parameter is null or empty, default NPC name will be used</param>
+        /// <returns></returns>
+        public static async Task<bool> OpenNpcSellPanel( string npcName = "" )
+        {
+            if (string.IsNullOrEmpty(npcName))
+                npcName = Actor.TownNpcName;
+
+            if (npcName == "")
+            {
+                CommunityLib.Log.ErrorFormat("[{0}] TownNpcName returned an empty string.", "OpenNpcSellPanel");
+                return false;
+            }
+
+            if (!await TalkToNpc(npcName))
+                return false;
+
+            var isSellDialogOpen = LokiPoe.InGameState.NpcDialogUi.SellItems();
+            await Coroutines.WaitForSellPanel(1000);
+
+            if (isSellDialogOpen != LokiPoe.InGameState.ConverseResult.None)
+            {
+                CommunityLib.Log.ErrorFormat("[{0}] Fail open sell dialog. Error: {1}", "OpenNpcSellPanel", isSellDialogOpen);
+                return false;
+            }
+
+            CommunityLib.Log.DebugFormat("[{0}] {1}'s Sell Panel opened successfully", "OpenNpcSellPanel", npcName);
+
+            return true;
+        }
+
         /// <summary>
         /// This task (awaitable) handles the whole process to talk to a NPC to reach the list of choices
         /// </summary>
@@ -52,5 +119,7 @@ namespace CommunityLib
 
             return true;
         }
+
+
     }
 }
