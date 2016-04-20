@@ -1,4 +1,5 @@
-﻿using System;
+﻿//!CompilerOption|AddRef|System.Web.dll
+using System;
 using System.IO;
 using System.Net;
 using System.Web;
