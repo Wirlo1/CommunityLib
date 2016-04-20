@@ -1,12 +1,18 @@
-﻿using System.Linq;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using Buddy.Coroutines;
 using Exilebuddy;
+using IronPython.Modules;
 using Loki.Bot;
 using Loki.Common;
 using log4net;
 using Loki;
+using Loki.Game;
 
 namespace CommunityLib
 {
@@ -16,6 +22,26 @@ namespace CommunityLib
 
         #region Implementation of IRunnable
 
+        private void RestartBot()
+        {
+            //var args = Environment.GetCommandLineArgs();
+            var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            var workingDir = Path.GetDirectoryName(exe);
+
+            var proc1 = new ProcessStartInfo
+            {
+                UseShellExecute = true,
+                FileName = exe,
+                Arguments = LokiPoe.Memory.Process.StartInfo.Arguments,
+                WindowStyle = ProcessWindowStyle.Normal
+            };
+            if (workingDir != null)
+                proc1.WorkingDirectory = workingDir;
+
+            Process.Start(proc1);
+            Application.Current.Shutdown((int)ApplicationExitCodes.Restarting);
+        }
+
         public void Start()
         {
             if (_needRestart)
@@ -23,11 +49,13 @@ namespace CommunityLib
                 Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
                 Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
                 Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                Log.InfoFormat("[{0}] {1} has been successfuly installed. Please restart the bot completly.", Name, Name);
+                //Log.InfoFormat("[{0}] {1} has been successfuly installed. Please restart the bot completly.", Name, Name);
+                Log.InfoFormat("[{0}] {1} has been successfuly installed. The bot will now restart itself.", Name, Name);
                 Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
                 Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
                 Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                BotManager.Stop(true);
+                //BotManager.Stop(true);
+                RestartBot();
             }
             Log.DebugFormat("[{0}] Starting", Name);
         }
