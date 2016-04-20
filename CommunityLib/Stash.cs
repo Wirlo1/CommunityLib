@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
 using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Common;
 using Loki.Game;
 using Loki.Game.Objects;
 using StashUI = Loki.Game.LokiPoe.InGameState.StashUi;
@@ -17,12 +18,102 @@ namespace CommunityLib
         {
             public InventoryControlWrapper Wrapper;
             public int ItemId;
-            public Item Item => Wrapper?.Inventory.GetItemById(ItemId);
+
+            public Item Item
+            {
+                get
+                {
+                    if (Wrapper == null)
+                        return null;
+
+                    return Wrapper.HasCurrencyTabOverride ? Wrapper.CurrencyTabItem : Wrapper.Inventory.GetItemById(ItemId);
+                }
+            }
 
             public StashItem(InventoryControlWrapper wrp, int it)
             {
                 Wrapper = wrp;
                 ItemId = it;
+            }
+        }
+
+        public class ExtendedStashItem : StashItem
+        {
+            public string TabName;
+            public string Name;
+            public string FullName;
+            public string League;
+
+            public Vector2i LocationInTab;
+            public int StackCount;
+            public int MaxStackCount;
+            public int MaxCurrencyTabStackCount;
+            public int SocketCount;
+            public int Links;
+            public int Quality;
+
+            public bool IsInCurrencyTab => MaxCurrencyTabStackCount > 0;
+
+
+            public ExtendedStashItem(InventoryControlWrapper wrp, int it, string tabName) : base(wrp, it)
+            {
+                TabName = tabName;
+                var item = Item;
+                if (item == null) return;
+
+                Name = item.Name;
+                FullName = item.FullName;
+                League = LokiPoe.Me.League;
+
+                StackCount = item.StackCount;
+                MaxStackCount = item.MaxStackCount;
+                LocationInTab = item.LocationTopLeft;
+                SocketCount = item.SocketCount;
+                Links = item.MaxLinkCount;
+
+                if (wrp.HasCurrencyTabOverride)
+                    MaxCurrencyTabStackCount = item.MaxCurrencyTabStackCount;
+            }
+
+            /// <summary>
+            /// Opens the stash and the stash tab of this item.
+            /// </summary>
+            /// <returns></returns>
+            public async Task<bool> GoTo()
+            {
+                if (string.IsNullOrEmpty(TabName))
+                    return false;
+
+                return await OpenStashTabTask(TabName);
+            }
+
+
+            public async Task<bool> FastMove(int retries = 3)
+            {
+                if (!await GoTo())
+                    return false;
+                return await Inventory.FastMove(Wrapper, Item.LocalId, retries);
+            }
+
+            public async Task<ApplyCursorResult> UseOnItem(InventoryControlWrapper destinationWrapper, Item destinationItem,
+                Func<Item, int, bool> delegateToStop = null)
+            {
+                if (!await GoTo())
+                    return ApplyCursorResult.ItemNotFound;
+
+                return await Inventory.UseItemOnItem(Wrapper, Item, destinationWrapper, destinationItem);
+            }
+
+            public async Task<bool> SplitAndPlaceInMainInventory(int pickupAmount)
+            {
+                if (!await GoTo())
+                    return false;
+                return await Inventory.SplitAndPlaceItemInMainInventory(Wrapper, Item, pickupAmount);
+            }
+
+            public override string ToString()
+            {
+                return $"{FullName} [Tab : {TabName} | Location : {LocationInTab} | League : {League} | Sockets : {SocketCount} | Links : {Links} | Quality : {Quality}]";
             }
         }
 
@@ -74,12 +165,12 @@ namespace CommunityLib
         public static async Task<Tuple<Results.FindItemInTabResult, StashItem>> FindTabContainingItem(string itemName)
         {
             // If stash isn't opened, abort this and return
-            if (!StashUI.IsOpened)
+            if (!await OpenStashTabTask())
                 return new Tuple<Results.FindItemInTabResult, StashItem>(Results.FindItemInTabResult.GuiNotOpened, null);
 
             // If we fail to go to first tab, return
-            if (GoToFirstTab() != SwitchToTabResult.None)
-                return new Tuple<Results.FindItemInTabResult, StashItem>(Results.FindItemInTabResult.GoToFirstTabFailed, null);
+            // if (GoToFirstTab() != SwitchToTabResult.None)
+            //     return new Tuple<Results.FindItemInTabResult, StashItem>(Results.FindItemInTabResult.GoToFirstTabFailed, null);
 
             foreach (var tabName in StashUI.TabControl.TabNames)
             {             
