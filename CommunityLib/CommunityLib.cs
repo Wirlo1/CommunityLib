@@ -79,7 +79,16 @@ namespace CommunityLib
         public async Task<bool> Logic(string type, params dynamic[] param)
         {
             await Coroutine.Sleep(0);
+
+            if (type == "core_area_changed_event")
+                Reset();
+
             return false;
+        }
+
+        private void Reset()
+        {
+            Data.ItemsInStashAlreadyCached = false;
         }
 
         public object Execute(string name, params dynamic[] param)
@@ -87,6 +96,6 @@ namespace CommunityLib
             return null;
         }
 
-        #endregion
-    }
+    #endregion
+}
 }

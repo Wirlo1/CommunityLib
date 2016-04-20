@@ -35,6 +35,7 @@
         {
             None,
             NotInTown,
+            NotInGame,
             NoHideout,
             TimeOut,
 

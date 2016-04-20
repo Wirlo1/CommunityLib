@@ -10,7 +10,6 @@ namespace CommunityLib
 {
     public static class Navigation
     {
-        //?
         /// <summary>
         /// The function will use chat to move to hideout
         /// </summary>
@@ -26,7 +25,8 @@ namespace CommunityLib
             if (!LokiPoe.Me.IsInTown)
                 return Results.FastGoToHideoutResult.NotInTown;
 
-            Chat.SendChatMsg("/hideout", false);
+            LokiPoe.InGameState.ChatPanel.Commands.hideout();
+            //Chat.SendChatMsg("/hideout", false);
             await Coroutines.LatencyWait();
             await Coroutines.ReactionWait();
 
@@ -58,7 +58,7 @@ namespace CommunityLib
                 {
                     CommunityLib.Log.DebugFormat("[CommunityLib][FastGoToHideout] Attempt to fastmove ({0}/{1})", nextTryTries, retries);
                     if (LokiPoe.IsInGame)
-                        Chat.SendChatMsg("/hideout", false);
+                        LokiPoe.InGameState.ChatPanel.Commands.hideout();
 
                     await Coroutines.LatencyWait();
                     await Coroutines.ReactionWait();
