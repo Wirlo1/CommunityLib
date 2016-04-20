@@ -1,9 +1,12 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using Buddy.Coroutines;
+using Exilebuddy;
 using Loki.Bot;
 using Loki.Common;
 using log4net;
+using Loki;
 
 namespace CommunityLib
 {
@@ -15,6 +18,17 @@ namespace CommunityLib
 
         public void Start()
         {
+            if (_needRestart)
+            {
+                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
+                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
+                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
+                Log.InfoFormat("[{0}] {1} has been successfuly installed. Please restart the bot completly.", Name, Name);
+                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
+                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
+                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
+                BotManager.Stop(true);
+            }
             Log.DebugFormat("[{0}] Starting", Name);
         }
 
@@ -41,8 +55,29 @@ namespace CommunityLib
 
         #region Implementation of IBase
 
+        //Install's and enables itself
+        private bool _needRestart;
+        private void Install()
+        {
+            //Adding ourselves at the ContentLoader, wee need to be loaded before normal plugins
+            if (!GuiSettings.Instance.ContentOrder.Any(ent => ent.Name.Equals(Name)))
+            {
+                //Adding us on top
+                GuiSettings.Instance.ContentOrder.Add( new StringEntry{Name = Name });
+                _needRestart = true;
+            }
+
+            //Checking if we are in enabled
+            if (!GuiSettings.Instance.EnabledPlugins.Any(ent => ent.Equals(Name)))
+            {
+                GuiSettings.Instance.EnabledPlugins.Add(Name);
+                _needRestart = true;
+            }
+        }
+
         public void Initialize()
         {
+            Install();
             Log.DebugFormat("[{0}] Initialized", Name);
         }
 
