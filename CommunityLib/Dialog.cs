@@ -61,7 +61,7 @@ namespace CommunityLib
                 return false;
 
             var isSellDialogOpen = LokiPoe.InGameState.NpcDialogUi.SellItems();
-            await Coroutines.WaitForSellPanel(1000);
+            await Coroutines.WaitForSellPanel();
 
             if (isSellDialogOpen != LokiPoe.InGameState.ConverseResult.None)
             {
@@ -83,7 +83,7 @@ namespace CommunityLib
         {
             await Coroutines.CloseBlockingWindows();
 
-            var isInteracted = await Coroutines.TalkToNpc(npcName);
+            await Coroutines.TalkToNpc(npcName);
 
             // Clicking continue if NPC is blablaing (xD)
             while (LokiPoe.InGameState.NpcDialogUi.DialogDepth == 2)
@@ -94,30 +94,10 @@ namespace CommunityLib
             }
 
             // Wait for the window to appear
-            await Coroutines.WaitForNpcDialogPanel();
-
-            switch (isInteracted)
-            {
-                case Coroutines.TalkToNpcError.InteractFailed:
-                    CommunityLib.Log.ErrorFormat("[CommunityLib][TalkToNpc] Interacting with {0} failed.", npcName);
-                    return false;
-                case Coroutines.TalkToNpcError.NpcDialogPanelDidNotOpen:
-                    CommunityLib.Log.ErrorFormat("[CommunityLib][TalkToNpc] {0} was interacted, but dialog window is not open.", npcName);
-                    return false;
-                case Coroutines.TalkToNpcError.CouldNotMoveToNpc:
-                    CommunityLib.Log.ErrorFormat("[CommunityLib][TalkToNpc] Cannot reach {0}.", npcName);
-                    return false;
-            }
-
+            var ret = await Coroutines.WaitForNpcDialogPanel();
             await Coroutine.Sleep(500);
 
-            if (!LokiPoe.InGameState.NpcDialogUi.IsOpened)
-            {
-                CommunityLib.Log.ErrorFormat("[CommunityLib][TalkToNpc] {0} was interacted, but dialog window is not open.", npcName);
-                return false;
-            }
-
-            return true;
+            return ret;
         }
 
 

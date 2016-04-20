@@ -155,7 +155,7 @@ namespace CommunityLib
             await Coroutines.ReactionWait();
 
             // First, we put the item on cursor to start applying
-            var err = InventoryControlWrapper.BeginApplyCursor();
+            var err = InventoryControlWrapper.BeginApplyCursor(true);
             if (err != ApplyCursorResult.None)
                 return ApplyCursorResult.ProcessHookManagerNotEnabled;
 
