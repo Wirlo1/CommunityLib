@@ -287,11 +287,11 @@ namespace CommunityLib
         /// <summary>
         /// Waits for a stash tab to change. Pass -1 to lastId to wait for the initial tab.
         /// </summary>
-        /// <param name="guild">Whether it's the guild stash or not</param>
         /// <param name="lastId">The last InventoryId before changing tabs.</param>
         /// <param name="timeout">The timeout of the function.</param>
+        /// <param name="guild">Whether it's the guild stash or not</param>
         /// <returns>true if the tab was changed and false otherwise.</returns>
-        public static async Task<bool> WaitForStashTabChange(bool guild = false, int lastId = -1, int timeout = 5000)
+        public static async Task<bool> WaitForStashTabChange(int lastId = -1, int timeout = 10000, bool guild = false)
         {
             var sw = Stopwatch.StartNew();
             var invTab = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo : StashUI.StashTabInfo;

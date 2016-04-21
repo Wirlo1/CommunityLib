@@ -73,6 +73,24 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// Returns a location where the waypoint should be if we're in a town.
+        /// </summary>
+        /// <returns>A location where the waypoint should come into view.</returns>
+        public static Vector2i GuessWaypointLocation()
+        {
+            var curArea = LokiPoe.LocalData.WorldArea.Id.ToLowerInvariant();
+
+            foreach (var stl in Data.WaypointsLocations)
+            {
+                if (!curArea.Contains(stl.Key)) continue;
+                return stl.Value;
+            }
+
+
+            throw new Exception($"GuessWaypointLocation called when curArea = {curArea}");
+        }
+
+        /// <summary>
         /// Returns hardcoded locations for npcs in a town. We need to make sure these don't change while we aren't looking!
         /// Ideally, we'd explore town to find the location if the npc object was not in view.
         /// </summary>

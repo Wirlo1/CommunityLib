@@ -18,7 +18,7 @@ namespace CommunityLib
         /// Opens the inventory panel.
         /// </summary>
         /// <returns></returns>
-        public static async Task<bool> OpenInventoryPanel(int timeout = 5000)
+        public static async Task<bool> OpenInventoryPanel(int timeout = 10000)
         {
             CommunityLib.Log.DebugFormat("[OpenInventoryPanel]");
 
@@ -113,6 +113,95 @@ namespace CommunityLib
             }
 
             return Results.OpenStashError.None;
+        }
+
+        /// <summary>
+        /// This coroutine interacts with the waypoint and waits for the world panel to open. When called from a hideout,
+        /// the waypoint must be in spawn range, otherwise the coroutine will fail. The movement is done without returning,
+        /// so this should be carefully used when not in town.
+        /// </summary>
+        /// <returns>An OpenStashError that describes the result.</returns>
+        public static async Task<Results.OpenWaypointError> OpenWaypoint()
+        {
+            await Coroutines.CloseBlockingWindows();
+
+            await Coroutines.FinishCurrentAction();
+
+            var waypoint = LokiPoe.ObjectManager.Waypoint;
+            if (waypoint == null)
+            {
+                if (!LokiPoe.Me.IsInTown)
+                {
+                    return Results.OpenWaypointError.NoWaypoint;
+                }
+
+                if (
+                    !await
+                        Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(Actor.GuessWaypointLocation()), 25,
+                            60000, () => LokiPoe.ObjectManager.Waypoint != null))
+                {
+                    return Results.OpenWaypointError.CouldNotMoveToWaypoint;
+                }
+
+                waypoint = LokiPoe.ObjectManager.Waypoint;
+                if (waypoint == null)
+                {
+                    return Results.OpenWaypointError.NoWaypoint;
+                }
+            }
+
+            if (ExilePather.PathDistance(LokiPoe.MyPosition, waypoint.Position) > 30)
+            {
+                if (!await Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(waypoint.Position), 25, 15000, () => false))
+                {
+                    return Results.OpenWaypointError.CouldNotMoveToWaypoint;
+                }
+            }
+
+            await Coroutines.FinishCurrentAction();
+
+            waypoint = LokiPoe.ObjectManager.Waypoint;
+            if (waypoint == null)
+            {
+                return Results.OpenWaypointError.NoWaypoint;
+            }
+
+            if (!await InteractWith(waypoint))
+                return Results.OpenWaypointError.InteractFailed;
+
+            if (!await WaitForWorldPanel())
+                return Results.OpenWaypointError.WorldPanelDidNotOpen;
+
+            await Coroutine.Sleep(1000); // Adding this in to let the gui load more
+
+            return Results.OpenWaypointError.None;
+        }
+
+        /// <summary>
+        /// This coroutine waits for the world panel to open after clicking on a waypoint.
+        /// </summary>
+        /// <param name="timeout">How long to wait before the coroutine fails.</param>
+        /// <returns>true on succes and false on failure.</returns>
+        public static async Task<bool> WaitForWorldPanel(int timeout = 10000)
+        {
+            CommunityLib.Log.DebugFormat("[WaitForWorldPanel]");
+
+            var sw = Stopwatch.StartNew();
+
+            while (!LokiPoe.InGameState.WorldUi.IsOpened)
+            {
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.ErrorFormat("[WaitForWorldPanel] Timeout.");
+                    return false;
+                }
+
+                CommunityLib.Log.DebugFormat("[WaitForWorldPanel] We have been waiting {0} for the world panel to open.", sw.Elapsed);
+
+                await Coroutines.ReactionWait();
+            }
+
+            return true;
         }
 
         /// <summary>

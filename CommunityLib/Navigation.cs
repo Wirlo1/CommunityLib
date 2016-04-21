@@ -75,5 +75,37 @@ namespace CommunityLib
             CommunityLib.Log.ErrorFormat("[CommunityLib][FastGoToHideout] Operation failed after {0} tries", retries);
             return Results.FastGoToHideoutResult.TimeOut;
         }
+
+        /// <summary>
+        /// Goes to the specified area using waypoint.
+        /// </summary>
+        /// <param name="name">Name of the area eg "Highgate"</param>
+        /// <param name="difficulty"></param>
+        /// <param name="newInstance">Do you want to open new instance?</param>
+        /// <returns></returns>
+        public static async Task<LokiPoe.InGameState.TakeWaypointResult> TakeWaypoint( string name, Difficulty difficulty, bool newInstance = false )
+        {
+            await Coroutines.CloseBlockingWindows();
+            var opened = await LibCoroutines.OpenWaypoint();
+            if (opened != Results.OpenWaypointError.None)
+            {
+                CommunityLib.Log.ErrorFormat("[TakeWaypoint] Fail to open waypoint. Error: \"{0}\".", opened);
+                return LokiPoe.InGameState.TakeWaypointResult.WaypointControlNotVisible;
+            }
+
+            var areaHash = LokiPoe.LocalData.AreaHash;
+            var taken = name == "Hideout"
+                ? LokiPoe.InGameState.WorldUi.GoToHideout()
+                : LokiPoe.InGameState.WorldUi.TakeWaypoint(LokiPoe.GetZoneId(difficulty.ToString(), name), newInstance, int.MaxValue);
+
+            if (taken != LokiPoe.InGameState.TakeWaypointResult.None)
+            {
+                CommunityLib.Log.ErrorFormat("[TakeWaypoint] Failed to take waypoint to \"{0}\". Error: \"{1}\".", name, taken);
+                return taken;
+            }
+
+            var awaited = await Areas.WaitForAreaChange(areaHash);
+            return awaited ? LokiPoe.InGameState.TakeWaypointResult.None : LokiPoe.InGameState.TakeWaypointResult.CouldNotJoinNewInstance;
+        }
     }
 }

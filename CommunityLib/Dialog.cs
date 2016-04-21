@@ -115,7 +115,7 @@ namespace CommunityLib
         /// <param name="p">Panel type, part of PanelType enum</param>
         /// <param name="timeout">How long to wait before the coroutine fails.</param>
         /// <returns>true on succes and false on failure.</returns>
-        public static async Task<bool> WaitForPanel(PanelType p, int timeout = 3000)
+        public static async Task<bool> WaitForPanel(PanelType p, int timeout = 10000)
         {
             CommunityLib.Log.DebugFormat($"[WaitFor{p}Panel]");
 

@@ -33,6 +33,15 @@ namespace CommunityLib
                 new Tuple<string, string, Vector2i>("4_town", "Petarus and Vanja", new Vector2i(204, 546))
             };
 
+        public static readonly Dictionary<string, Vector2i> WaypointsLocations =
+        new Dictionary<string, Vector2i>
+        {
+                    {"1_town", new Vector2i(196, 172)},
+                    {"2_town", new Vector2i(188, 135)},
+                    {"3_town", new Vector2i(217, 226)},
+                    {"4_town", new Vector2i(286, 491)}
+        };
+
         private static readonly string[] Currency =
         {
             "Scroll of Wisdom", "Portal Scroll", "Orb of Transmutation",
