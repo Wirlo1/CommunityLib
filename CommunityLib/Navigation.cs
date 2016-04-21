@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 using Loki.Game.GameData;
 

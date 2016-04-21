@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 using Loki.Game.GameData;
 using Loki.Game.Objects;
@@ -216,6 +217,83 @@ namespace CommunityLib
             await Inputs.ClearCursorTask();
 
             return true;
+        }
+
+
+        public static async Task<Item> FindItem(string itemName)
+        {
+            //Open Inventory panel
+            return await FindItem(d => d.FullName.Equals(itemName));
+        }
+
+        public static async Task<Item> FindItem(CommunityLib.FindItemDelegate condition)
+        {
+            //Open Inventory panel
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+            {
+                //TODO Fix on merge
+                await Coroutine.OpenInventoryPanel();
+                await Coroutines.ReactionWait();
+            }
+
+            return LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
+        }
+
+        /// <summary>
+        /// Finds the item in inventory or in Stash
+        /// </summary>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(string itemName)
+        {
+            //Open Inventory panel
+            return await SearchForItem(d => d.FullName.Equals(itemName));
+        }
+
+        /// <summary>
+        /// Finds the item in inventory or in Stash
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <returns></returns>
+        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
+        {
+            //Open Inventory panel
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+            {
+                //TODO Fix on merge
+                await Coroutine.OpenInventoryPanel();
+                await Coroutines.ReactionWait();
+            }
+
+            var item = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
+            if (item != null)
+                return new Tuple<Results.FindItemInTabResult, Stash.StashItem>
+                    (
+                    Results.FindItemInTabResult.None,
+                    new Stash.StashItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
+                    );
+
+            //Now let's look in Stash
+            return await Stash.FindTabContainingItem(condition);
+        }
+
+        public static async Task<List<Item>> FindItems(string itemName)
+        {
+            //Open Inventory panel
+            return await FindItems(d => d.FullName.Equals(itemName));
+        }
+
+        public static async Task<List<Item>> FindItems(CommunityLib.FindItemDelegate condition)
+        {
+            //Open Inventory panel
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+            {
+                //TODO Fix on merge
+                await Coroutine.OpenInventoryPanel();
+                await Coroutines.ReactionWait();
+            }
+
+            return LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.Where(d => condition(d)).ToList();
         }
     }
 }

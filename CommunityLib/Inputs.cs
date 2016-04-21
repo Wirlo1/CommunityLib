@@ -1,7 +1,6 @@
 ﻿using System.Threading.Tasks;
 using System.Windows.Forms;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
 using Loki.Game;
 
 namespace CommunityLib

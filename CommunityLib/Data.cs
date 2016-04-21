@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 
 namespace CommunityLib

@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Common;
 using Loki.Game;
 using Loki.Game.Objects;
@@ -13,7 +13,6 @@ namespace CommunityLib
 {
     public class Stash
     {
-        public delegate bool FindItemDelegate(Item item);
         public class StashItem
         {
             public InventoryControlWrapper Wrapper;
@@ -132,7 +131,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="condition"></param>
         /// <returns>StashItem</returns>
-        public static StashItem FindItemInStashTab(FindItemDelegate condition)
+        public static StashItem FindItemInStashTab(CommunityLib.FindItemDelegate condition)
         {
             //If it's regular tab then it's rather simple
             if (!StashUI.StashTabInfo.IsPremiumCurrency)
@@ -156,13 +155,18 @@ namespace CommunityLib
             return null;
         }
 
+        public static async Task<Tuple<Results.FindItemInTabResult, StashItem>> FindTabContainingItem(string itemName)
+        {
+            return await FindTabContainingItem(d => d.FullName.Equals(itemName));
+        }
+
         /// <summary>
         /// This function iterates through the stash to find an item by name
         /// If a tab is reached and the item is found, GUI will be stopped on this tab so you can directly interact with it.
         /// </summary>
-        /// <param name="itemName"></param>
+        /// <param name="condition"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, StashItem>> FindTabContainingItem(string itemName)
+        public static async Task<Tuple<Results.FindItemInTabResult, StashItem>> FindTabContainingItem(CommunityLib.FindItemDelegate condition)
         {
             // If stash isn't opened, abort this and return
             if (!await OpenStashTabTask())
@@ -175,7 +179,7 @@ namespace CommunityLib
             foreach (var tabName in StashUI.TabControl.TabNames)
             {             
                 // If the item has no occurences in this tab, switch to the next one
-                var it = FindItemInStashTab(itemName);
+                var it = FindItemInStashTab(condition);
                 if (it == null)
                 {
                     // On last tab? break execution
