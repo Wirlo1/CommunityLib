@@ -155,6 +155,11 @@ namespace CommunityLib
             return null;
         }
 
+        /// <summary>
+        /// Overload for FindTabContainingItem to an item by its name
+        /// </summary>
+        /// <param name="itemName">The item name</param>
+        /// <returns></returns>
         public static async Task<Tuple<Results.FindItemInTabResult, StashItem>> FindTabContainingItem(string itemName)
         {
             return await FindTabContainingItem(d => d.FullName.Equals(itemName));
@@ -164,7 +169,7 @@ namespace CommunityLib
         /// This function iterates through the stash to find an item by name
         /// If a tab is reached and the item is found, GUI will be stopped on this tab so you can directly interact with it.
         /// </summary>
-        /// <param name="condition"></param>
+        /// <param name="condition">Condition to pass item through</param>
         /// <returns></returns>
         public static async Task<Tuple<Results.FindItemInTabResult, StashItem>> FindTabContainingItem(CommunityLib.FindItemDelegate condition)
         {
@@ -245,9 +250,9 @@ namespace CommunityLib
             //open stash
             if (!StashUI.IsOpened)
             {
-                var isOpenedErr = await Coroutines.OpenStash();
-                await Coroutines.WaitForStashPanel();
-                if (isOpenedErr != Coroutines.OpenStashError.None)
+                var isOpenedErr = await LibCoroutines.OpenStash();
+                await Dialog.WaitForPanel(Dialog.PanelType.Stash);
+                if (isOpenedErr != Results.OpenStashError.None)
                 {
                     CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to open the stash. Error: {0}", isOpenedErr);
                     return false;
@@ -282,21 +287,36 @@ namespace CommunityLib
         /// <summary>
         /// Waits for a stash tab to change. Pass -1 to lastId to wait for the initial tab.
         /// </summary>
+        /// <param name="guild">Whether it's the guild stash or not</param>
         /// <param name="lastId">The last InventoryId before changing tabs.</param>
         /// <param name="timeout">The timeout of the function.</param>
         /// <returns>true if the tab was changed and false otherwise.</returns>
-        public static async Task<bool> WaitForStashTabChange(int lastId = -1, int timeout = 5000)
+        public static async Task<bool> WaitForStashTabChange(bool guild = false, int lastId = -1, int timeout = 5000)
         {
             var sw = Stopwatch.StartNew();
-            var invTab = StashUI.StashTabInfo;
+            var invTab = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo : StashUI.StashTabInfo;
             while (invTab == null || invTab.InventoryId == lastId)
             {
                 await Coroutine.Sleep(1);
-                invTab = StashUI.StashTabInfo;
+                invTab = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo : StashUI.StashTabInfo;
                 if (sw.ElapsedMilliseconds > timeout)
                     return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Returns the corresponding stash, depending on the parameter passed
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <returns></returns>
+        public static NetworkObject DetermineStash(bool guild = false)
+        {
+            var stash = LokiPoe.ObjectManager.Stash;
+            if (guild)
+                stash = LokiPoe.ObjectManager.GuildStash;
+
+            return stash;
         }
     }
 }

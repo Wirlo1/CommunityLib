@@ -1,65 +1,45 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Forms;
 using Buddy.Coroutines;
 using Exilebuddy;
-using IronPython.Modules;
 using Loki.Bot;
 using Loki.Common;
 using log4net;
 using Loki;
-using Loki.Game;
 using Loki.Game.Objects;
+using Application = System.Windows.Application;
+using UserControl = System.Windows.Controls.UserControl;
 
 namespace CommunityLib
 {
     public class CommunityLib : IPlugin
     {
-        public static readonly ILog Log = Logger.GetLoggerInstanceForType();
+        #region Delegates
+
+        /// <summary>
+        /// Delegate used in FindItem(s) functions
+        /// </summary>
+        /// <param name="item">Item to check</param>
+        /// <returns>true if the condition is met</returns>
         public delegate bool FindItemDelegate(Item item);
 
+        #endregion
+
+        public static readonly ILog Log = Logger.GetLoggerInstanceForType();
 
         #region Implementation of IRunnable
-
-        private void RestartBot()
-        {
-            //var args = Environment.GetCommandLineArgs();
-            var exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            var workingDir = Path.GetDirectoryName(exe);
-
-            var proc1 = new ProcessStartInfo
-            {
-                UseShellExecute = true,
-                FileName = exe,
-                Arguments = LokiPoe.Memory.Process.StartInfo.Arguments,
-                WindowStyle = ProcessWindowStyle.Normal
-            };
-            if (workingDir != null)
-                proc1.WorkingDirectory = workingDir;
-
-            Process.Start(proc1);
-            Application.Current.Shutdown((int)ApplicationExitCodes.Restarting);
-        }
 
         public void Start()
         {
             if (_needRestart)
             {
-                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                //Log.InfoFormat("[{0}] {1} has been successfuly installed. Please restart the bot completly.", Name, Name);
-                Log.InfoFormat("[{0}] {1} has been successfuly installed. The bot will now restart itself.", Name, Name);
-                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                Log.InfoFormat("[{0}] ------------------------------------------------------------------------------", Name);
-                //BotManager.Stop(true);
-                RestartBot();
+                MessageBox.Show(
+                    $"{Name} self-install ran successfully and requires a bot restart, bot won't start until it's done",
+                    $"{Name} installed successfully!", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                BotManager.Stop(true);
             }
+
             Log.DebugFormat("[{0}] Starting", Name);
         }
 
@@ -93,15 +73,15 @@ namespace CommunityLib
             //Adding ourselves at the ContentLoader, wee need to be loaded before normal plugins
             if (!GuiSettings.Instance.ContentOrder.Any(ent => ent.Name.Equals(Name)))
             {
-                //Adding us on top
-                GuiSettings.Instance.ContentOrder.Add( new StringEntry{Name = Name });
+                //Adding us on top (invoke req)
+                Application.Current.Dispatcher.Invoke(delegate { GuiSettings.Instance.ContentOrder.Add(new StringEntry {Name = Name}); });
                 _needRestart = true;
             }
 
             //Checking if we are in enabled
             if (!GuiSettings.Instance.EnabledPlugins.Any(ent => ent.Equals(Name)))
             {
-                GuiSettings.Instance.EnabledPlugins.Add(Name);
+                Application.Current.Dispatcher.Invoke(delegate { GuiSettings.Instance.EnabledPlugins.Add(Name); });
                 _needRestart = true;
             }
         }
@@ -162,6 +142,7 @@ namespace CommunityLib
             return null;
         }
 
-    #endregion
-}
+        #endregion
+
+    }
 }

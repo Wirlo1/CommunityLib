@@ -4,12 +4,35 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Loki.Bot;
+using Loki.Common;
 using Loki.Game;
 
 namespace CommunityLib
 {
     public static class Data
     {
+        public static readonly Dictionary<string, Vector2i> StashesLocations = 
+            new Dictionary<string, Vector2i>
+            {
+                {"1_town", new Vector2i(246, 266)},
+                {"2_town", new Vector2i(178, 195)},
+                {"3_town", new Vector2i(206, 306)},
+                {"4_town", new Vector2i(199, 509)}
+            };
+
+        public static readonly List<Tuple<string, string, Vector2i>> TownNpcStaticLocations =
+            new List<Tuple<string, string, Vector2i>>
+            {
+                new Tuple<string, string, Vector2i>("1_town", "Nessa", new Vector2i(268, 253)),
+                new Tuple<string, string, Vector2i>("1_town", "Tarkleigh", new Vector2i(312, 189)),
+                new Tuple<string, string, Vector2i>("2_town", "Greust", new Vector2i(192, 173)),
+                new Tuple<string, string, Vector2i>("2_town", "Yeena", new Vector2i(162, 240)),
+                new Tuple<string, string, Vector2i>("3_town", "Clarissa", new Vector2i(147, 326)),
+                new Tuple<string, string, Vector2i>("3_town", "Hargan", new Vector2i(281, 357)),
+                new Tuple<string, string, Vector2i>("4_town", "Kira", new Vector2i(169, 500)),
+                new Tuple<string, string, Vector2i>("4_town", "Petarus and Vanja", new Vector2i(204, 546))
+            };
+
         private static readonly string[] Currency =
         {
             "Scroll of Wisdom", "Portal Scroll", "Orb of Transmutation",
@@ -103,7 +126,7 @@ namespace CommunityLib
                 }
 
                 //Sleep to not look too bottish
-                await Stash.WaitForStashTabChange(lastId, 10000);
+                await Stash.WaitForStashTabChange(false, lastId, 10000);
                 await Coroutines.ReactionWait();
             }
 
