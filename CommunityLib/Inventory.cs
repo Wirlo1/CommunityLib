@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 using Loki.Game.GameData;
 using Loki.Game.Objects;
@@ -13,6 +14,99 @@ namespace CommunityLib
 {
     public static class Inventory
     {
+        /// <summary>
+        /// Finds the item in inventory or in Stash
+        /// </summary>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(string itemName)
+        {
+            //Open Inventory panel
+            return await SearchForItem(d => d.FullName.Equals(itemName));
+        }
+
+        /// <summary>
+        /// Finds the item in inventory or in Stash
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <returns></returns>
+        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
+        {
+            //Open Inventory panel
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+            {
+                await LibCoroutines.OpenInventoryPanel();
+                await Coroutines.ReactionWait();
+            }
+
+            var item = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
+            if (item != null)
+                return new Tuple<Results.FindItemInTabResult, Stash.StashItem>
+                    (
+                    Results.FindItemInTabResult.None,
+                    new Stash.StashItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
+                    );
+
+            //Now let's look in Stash
+            return await Stash.FindTabContainingItem(condition);
+        }
+
+        /// <summary>
+        /// Overload for FindItem to find a single item by name (Main inventory only !)
+        /// </summary>
+        /// <param name="itemName">Name of the item to find</param>
+        /// <returns>Item</returns>
+        public static async Task<Item> FindItem(string itemName)
+        {
+            //Open Inventory panel
+            return await FindItem(d => d.FullName.Equals(itemName));
+        }
+
+        /// <summary>
+        /// Function that returns a specific item matching condition (Main inventory only !)
+        /// </summary>
+        /// <param name="condition">condition to pass item through</param>
+        /// <returns>Item</returns>
+        public static async Task<Item> FindItem(CommunityLib.FindItemDelegate condition)
+        {
+            //Open Inventory panel
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+            {
+                await LibCoroutines.OpenInventoryPanel();
+                await Coroutines.ReactionWait();
+            }
+
+            return LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
+        }
+
+        /// <summary>
+        /// Overload of FindItems to find all the items matching this name (Main inventory only !)
+        /// </summary>
+        /// <param name="itemName">Name of the items to find</param>
+        /// <returns>A list of item(s)</returns>
+        public static async Task<List<Item>> FindItems(string itemName)
+        {
+            //Open Inventory panel
+            return await FindItems(d => d.FullName.Equals(itemName));
+        }
+
+        /// <summary>
+        /// Functions that returns a list of items matching condition (Main inventory only !)
+        /// </summary>
+        /// <param name="condition">condition to pass item through</param>
+        /// <returns>A list of item(s)</returns>
+        public static async Task<List<Item>> FindItems(CommunityLib.FindItemDelegate condition)
+        {
+            //Open Inventory panel
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+            {
+                await LibCoroutines.OpenInventoryPanel();
+                await Coroutines.ReactionWait();
+            }
+
+            return LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.Where(d => condition(d)).ToList();
+        }
+
         /// <summary>
         /// Generic FastMove using new Inv Wrapper
         /// The inventory you refer is theinventory that will be used for moving the item from
@@ -117,6 +211,14 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// This delegate is used in UseItemOnItem to stop execution if condition is met
+        /// </summary>
+        /// <param name="i">Item to use in delegate</param>
+        /// <param name="useCount">The number of times an item is used</param>
+        /// <returns>true if the condition is met</returns>
+        public delegate bool StopUsingDelegate(Item i, int useCount);
+
+        /// <summary>
         /// This functions is meant to use an item on another one, for identification, chancing, anything you can think about
         /// It also supports the +X% quality using stones/scraps
         /// </summary>
@@ -124,12 +226,9 @@ namespace CommunityLib
         /// <param name="sourceItem">The item meant to be used</param>
         /// <param name="destinationWrapper">The source (inventory) holding the item meant to be altered</param>
         /// <param name="destinationItem">The item menant to be altered</param>
-        /// <param name="delegateToStop">
-        /// The delegate is a lambda function it can be null, or used to provide a criteria to stop using.
-        /// The function itself has a maximum count handling (if there's no errors during the process) you can use as the 2nd parameter of the delegate
-        /// </param>
+        /// <param name="d">Delegate/Condition to stop using item</param>
         /// <returns>ApplyCursorResult enum entry</returns>
-        public static async Task<ApplyCursorResult> UseItemOnItem(InventoryControlWrapper sourceWrapper, Item sourceItem, InventoryControlWrapper destinationWrapper, Item destinationItem, Func<Item, int, bool> delegateToStop = null)
+        public static async Task<ApplyCursorResult> UseItemOnItem(InventoryControlWrapper sourceWrapper, Item sourceItem, InventoryControlWrapper destinationWrapper, Item destinationItem, StopUsingDelegate d = null)
         {
             // If Any of these args are null, throw an application-level exception
             if (sourceWrapper == null)
@@ -175,7 +274,7 @@ namespace CommunityLib
                 await Coroutines.ReactionWait();
 
                 // If the delegate is null, that means our processing is done, break the loop to return None
-                if (delegateToStop == null)
+                if (d == null)
                     break;
 
                 // We increment usecount to make it usable in delegate
@@ -183,7 +282,7 @@ namespace CommunityLib
 
                 // Refresh item to test the delegate (or condition)
                 destinationItem = destinationWrapper.Inventory.GetItemAtLocation(itemLocation.X, itemLocation.Y);
-                if (delegateToStop.Invoke(destinationItem, useCount))
+                if (d.Invoke(destinationItem, useCount))
                     break;
             }
 

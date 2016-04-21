@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using System.Windows.Forms;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 
 namespace CommunityLib
@@ -35,7 +35,7 @@ namespace CommunityLib
 
                 if (!LokiPoe.InGameState.InventoryUi.IsOpened)
                 {
-                    await Coroutines.OpenInventoryPanel();
+                    await LibCoroutines.OpenInventoryPanel();
                     await Coroutines.LatencyWait();
                     await Coroutines.ReactionWait();
                     if (!LokiPoe.InGameState.InventoryUi.IsOpened)

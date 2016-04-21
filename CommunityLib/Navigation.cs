@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 using Loki.Game.GameData;
 
@@ -49,7 +49,8 @@ namespace CommunityLib
                 //LokiPoe.InGameState.IsEnteringAreaTextShown
 
                 //User have no hideout
-                var noHideoutMessage = Chat.GetNewChatMessages().Any( d => d.Message.Contains(Dat.LookupClientString(ClientStringsEnum.NoHideout).Value) );
+                //TODO: Fix diz (NoHideout message not in enum)
+                var noHideoutMessage = Chat.GetNewChatMessages().Any( d => d.Message.Contains(Dat.LookupClientString(ClientStringsEnum.No).Value) );
                 if (noHideoutMessage)
                     return Results.FastGoToHideoutResult.NoHideout;
 

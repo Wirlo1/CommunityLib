@@ -1,12 +1,22 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Buddy.Coroutines;
-using Loki.Bot.Logic.Bots.OldGrindBot;
+using Loki.Bot;
 using Loki.Game;
 
 namespace CommunityLib
 {
     public class Dialog
     {
+        public enum PanelType
+        {
+            Purchase,
+            Sell,
+            NpcDialog,
+            Stash,
+            GuildStash
+        }
 
         /// <summary>
         /// Opens the NPC buy Panel.
@@ -28,7 +38,7 @@ namespace CommunityLib
                 return false;
 
             var isBuyDialogOpen = LokiPoe.InGameState.NpcDialogUi.PurchaseItems();
-            await Coroutines.WaitForPurchasePanel();
+            await WaitForPanel(PanelType.Purchase);
 
             if (isBuyDialogOpen != LokiPoe.InGameState.ConverseResult.None)
             {
@@ -61,7 +71,7 @@ namespace CommunityLib
                 return false;
 
             var isSellDialogOpen = LokiPoe.InGameState.NpcDialogUi.SellItems();
-            await Coroutines.WaitForSellPanel();
+            await WaitForPanel(PanelType.Sell);
 
             if (isSellDialogOpen != LokiPoe.InGameState.ConverseResult.None)
             {
@@ -82,8 +92,7 @@ namespace CommunityLib
         public static async Task<bool> TalkToNpc(string npcName)
         {
             await Coroutines.CloseBlockingWindows();
-
-            await Coroutines.TalkToNpc(npcName);
+            await LibCoroutines.TalkToNpc(npcName);
 
             // Clicking continue if NPC is blablaing (xD)
             while (LokiPoe.InGameState.NpcDialogUi.DialogDepth == 2)
@@ -94,12 +103,59 @@ namespace CommunityLib
             }
 
             // Wait for the window to appear
-            var ret = await Coroutines.WaitForNpcDialogPanel();
+            var ret = await WaitForPanel(PanelType.NpcDialog);
             await Coroutine.Sleep(500);
 
             return ret;
         }
 
+        /// <summary>
+        /// This coroutine waits for the panel to open after buy interaction.
+        /// </summary>
+        /// <param name="p">Panel type, part of PanelType enum</param>
+        /// <param name="timeout">How long to wait before the coroutine fails.</param>
+        /// <returns>true on succes and false on failure.</returns>
+        public static async Task<bool> WaitForPanel(PanelType p, int timeout = 3000)
+        {
+            CommunityLib.Log.DebugFormat($"[WaitFor{p}Panel]");
 
+            var sw = Stopwatch.StartNew();
+            Func<bool> condition = null;
+
+            switch (p)
+            {
+                    case PanelType.Sell:
+                        condition = () => LokiPoe.InGameState.SellUi.IsOpened;
+                        break;
+                    case PanelType.Purchase:
+                        condition = () => LokiPoe.InGameState.PurchaseUi.IsOpened;
+                        break;
+                    case PanelType.NpcDialog:
+                        condition = () => LokiPoe.InGameState.NpcDialogUi.IsOpened;
+                        break;
+                    case PanelType.Stash:
+                        condition = () => LokiPoe.InGameState.StashUi.IsOpened;
+                        break;
+                    case PanelType.GuildStash:
+                        condition = () => LokiPoe.InGameState.GuildStashUi.IsOpened;
+                        break;
+            }
+
+            // Can't be null yo!
+            // ReSharper disable once PossibleNullReferenceException
+            while (!condition.Invoke())
+            {
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.ErrorFormat($"[WaitFor{p}Panel] Timeout.");
+                    return false;
+                }
+
+                CommunityLib.Log.DebugFormat($"[WaitFor{p}Panel] We have been waiting {sw.Elapsed} for the panel to open.");
+                await Coroutines.ReactionWait();
+            }
+
+            return true;
+        }
     }
 }
