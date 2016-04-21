@@ -102,7 +102,7 @@ namespace CommunityLib
                 if (!await Dialog.WaitForPanel(Dialog.PanelType.GuildStash))
                     return Results.OpenStashError.StashPanelDidNotOpen;
 
-                await Stash.WaitForStashTabChange(true);
+                await Stash.WaitForStashTabChange(-1, 10000, true);
             }
             else
             {
