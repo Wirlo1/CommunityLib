@@ -13,12 +13,15 @@ using Loki.Common;
 using log4net;
 using Loki;
 using Loki.Game;
+using Loki.Game.Objects;
 
 namespace CommunityLib
 {
     public class CommunityLib : IPlugin
     {
         public static readonly ILog Log = Logger.GetLoggerInstanceForType();
+        public delegate bool FindItemDelegate(Item item);
+
 
         #region Implementation of IRunnable
 
