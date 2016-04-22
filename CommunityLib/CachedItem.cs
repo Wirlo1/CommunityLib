@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Loki.Common;
 using Loki.Game;
@@ -107,15 +104,14 @@ namespace CommunityLib
         /// If the item is in stash, it's getting opened first and then returning the value.
         /// <para>if TabName is empty, it assumes the item is in inventory.</para>
         /// </summary>
-        /// <returns></returns>
-        public async Task<Item> GetItem()
+        /// <returns>Opened current stash and the item itself</returns>
+        public async Task<Item> FindItem()
         {
             if (!await GoTo())
                 return null;
 
             return Item;
         }
-
 
         public async Task<bool> FastMove(int retries = 3)
         {
