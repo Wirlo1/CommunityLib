@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
 using Loki.Bot;
-using Loki.Common;
 using Loki.Game;
 using Loki.Game.Objects;
 using StashUI = Loki.Game.LokiPoe.InGameState.StashUi;
@@ -23,11 +22,6 @@ namespace CommunityLib
             return FindItemInStashTab(d => d.FullName.Equals(itemName));
         }
 
-        /// <summary>
-        /// Return the InventoryControlWrapper for an item and its class
-        /// </summary>
-        /// <param name="condition"></param>
-        /// <returns>StashItem</returns>
         public static CachedItem FindItemInStashTab(CommunityLib.FindItemDelegate condition)
         {
             //If it's regular tab then it's rather simple
