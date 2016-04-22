@@ -19,7 +19,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="itemName"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(string itemName)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> SearchForItem(string itemName)
         {
             //Open Inventory panel
             return await SearchForItem(d => d.FullName.Equals(itemName));
@@ -30,7 +30,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="condition"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
         {
             //Open Inventory panel
             if (!LokiPoe.InGameState.InventoryUi.IsOpened)
@@ -41,10 +41,10 @@ namespace CommunityLib
 
             var item = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
             if (item != null)
-                return new Tuple<Results.FindItemInTabResult, Stash.StashItem>
+                return new Tuple<Results.FindItemInTabResult, CachedItem>
                     (
                     Results.FindItemInTabResult.None,
-                    new Stash.StashItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
+                    new CachedItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
                     );
 
             //Now let's look in Stash
