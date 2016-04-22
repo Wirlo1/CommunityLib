@@ -19,7 +19,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="itemName"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(string itemName)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> SearchForItem(string itemName)
         {
             //Open Inventory panel
             return await SearchForItem(d => d.FullName.Equals(itemName));
@@ -30,7 +30,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="condition"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, Stash.StashItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
         {
             //Open Inventory panel
             if (!LokiPoe.InGameState.InventoryUi.IsOpened)
@@ -41,10 +41,10 @@ namespace CommunityLib
 
             var item = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
             if (item != null)
-                return new Tuple<Results.FindItemInTabResult, Stash.StashItem>
+                return new Tuple<Results.FindItemInTabResult, CachedItem>
                     (
                     Results.FindItemInTabResult.None,
-                    new Stash.StashItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
+                    new CachedItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
                     );
 
             //Now let's look in Stash
@@ -114,8 +114,9 @@ namespace CommunityLib
         /// <param name="inv">This is the location where the item is picked up (can be stash or whatever you want)</param>
         /// <param name="id">This is the item localid</param>
         /// <param name="retries">Number of max fastmove attempts</param>
+        /// <param name="breakFunc">If specified condition return true, FastMove will canceled and false will be returned</param>
         /// <returns>FastMoveResult enum entry</returns>
-        public static async Task<bool> FastMove(InventoryControlWrapper inv, int id, int retries = 3)
+        public static async Task<bool> FastMove(InventoryControlWrapper inv, int id, int retries = 3, Func<bool> breakFunc = null )
         {
             // If the inventory is null for reasons, throw ana application-level error
             if (inv == null)
@@ -140,6 +141,10 @@ namespace CommunityLib
             int nextFastMoveTries = 0;
             while (nextFastMoveTries < retries)
             {
+                if (breakFunc != null)
+                    if (breakFunc())
+                        return false;
+
                 // Verifying if the item exists in the source inventory
                 // If not, the item has been moved return true
                 var itemExists = inv.Inventory.GetItemById(id);

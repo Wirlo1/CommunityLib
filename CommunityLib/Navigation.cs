@@ -1,8 +1,10 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
 using Loki.Bot;
+using Loki.Common;
 using Loki.Game;
 using Loki.Game.GameData;
 
@@ -10,6 +12,62 @@ namespace CommunityLib
 {
     public static class Navigation
     {
+        /// <summary>
+        /// This coroutine moves towards a position until it is within the specified stop distance.
+        /// </summary>
+        /// <param name="position">The position to move ot.</param>
+        /// <param name="stopDistance">How close to the location should we get.</param>
+        /// <param name="timeout">How long should the coroutine execute for before stopping due to timeout.</param>
+        /// <param name="stopCondition">delegate to stop moving</param>
+        /// <returns></returns>
+        public static async Task<bool> MoveToLocation(Vector2i position, int stopDistance, int timeout, Func<bool> stopCondition)
+        {
+            var sw = Stopwatch.StartNew();
+            var dsw = Stopwatch.StartNew();
+
+            var da = (bool)PlayerMover.Instance.Execute("GetDoAdjustments");
+            PlayerMover.Instance.Execute("SetDoAdjustments", false);
+
+            while (LokiPoe.MyPosition.Distance(position) > stopDistance)
+            {
+                if (LokiPoe.Me.IsDead)
+                {
+                    CommunityLib.Log.ErrorFormat("[MoveToLocation] The player is dead.");
+                    PlayerMover.Instance.Execute("SetDoAdjustments", da);
+                    return false;
+                }
+
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.ErrorFormat("[MoveToLocation] Timeout.");
+                    PlayerMover.Instance.Execute("SetDoAdjustments", da);
+                    return false;
+                }
+
+                if (stopCondition())
+                    break;
+
+                if (dsw.ElapsedMilliseconds > 100)
+                {
+                    CommunityLib.Log.DebugFormat(
+                        "[MoveToLocation] Now moving towards {0}. We have been performing this task for {1}.",
+                        position,
+                        sw.Elapsed);
+                    dsw.Restart();
+                }
+
+                if (!PlayerMover.MoveTowards(position))
+                    CommunityLib.Log.ErrorFormat("[MoveToLocation] MoveTowards failed for {0}.", position);
+
+                await Coroutine.Yield();
+            }
+
+            PlayerMover.Instance.Execute("SetDoAdjustments", da);
+            await Coroutines.FinishCurrentAction();
+
+            return true;
+        }
+
         /// <summary>
         /// The function will use chat to move to hideout
         /// </summary>
@@ -74,6 +132,42 @@ namespace CommunityLib
 
             CommunityLib.Log.ErrorFormat("[CommunityLib][FastGoToHideout] Operation failed after {0} tries", retries);
             return Results.FastGoToHideoutResult.TimeOut;
+        }
+
+        /// <summary>
+        /// Goes to the specified area using waypoint.
+        /// </summary>
+        /// <param name="name">Name of the area eg "Highgate"</param>
+        /// <param name="difficulty"></param>
+        /// <param name="newInstance">Do you want to open new instance?</param>
+        /// <returns></returns>
+        public static async Task<LokiPoe.InGameState.TakeWaypointResult> TakeWaypoint( string name, Difficulty difficulty, bool newInstance = false )
+        {
+            //We are already there
+            if (LokiPoe.LocalData.WorldArea.Name == name)
+                return LokiPoe.InGameState.TakeWaypointResult.None;
+
+            await Coroutines.CloseBlockingWindows();
+            var opened = await LibCoroutines.OpenWaypoint();
+            if (opened != Results.OpenWaypointError.None)
+            {
+                CommunityLib.Log.ErrorFormat("[TakeWaypoint] Fail to open waypoint. Error: \"{0}\".", opened);
+                return LokiPoe.InGameState.TakeWaypointResult.WaypointControlNotVisible;
+            }
+
+            var areaHash = LokiPoe.LocalData.AreaHash;
+            var taken = name == "Hideout"
+                ? LokiPoe.InGameState.WorldUi.GoToHideout()
+                : LokiPoe.InGameState.WorldUi.TakeWaypoint(LokiPoe.GetZoneId(difficulty.ToString(), name), newInstance, Int32.MaxValue);
+
+            if (taken != LokiPoe.InGameState.TakeWaypointResult.None)
+            {
+                CommunityLib.Log.ErrorFormat("[TakeWaypoint] Failed to take waypoint to \"{0}\". Error: \"{1}\".", name, taken);
+                return taken;
+            }
+
+            var awaited = await Areas.WaitForAreaChange(areaHash);
+            return awaited ? LokiPoe.InGameState.TakeWaypointResult.None : LokiPoe.InGameState.TakeWaypointResult.CouldNotJoinNewInstance;
         }
     }
 }

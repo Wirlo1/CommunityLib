@@ -73,5 +73,22 @@
             /// <summary>The npc's dialog panel did not open.</summary>
             NpcDialogPanelDidNotOpen,
         }
+
+        /// <summary>
+        /// Errors for the OpenWaypoint function.
+        /// </summary>
+        public enum OpenWaypointError
+        {
+            /// <summary>None, the waypoint has been interacted with and the world panel is opened.</summary>
+            None,
+            /// <summary>There was an error moving to the waypoint.</summary>
+            CouldNotMoveToWaypoint,
+            /// <summary>No waypoint object was detected.</summary>
+            NoWaypoint,
+            /// <summary>Interaction with the waypoint failed.</summary>
+            InteractFailed,
+            /// <summary>The world panel did not open.</summary>
+            WorldPanelDidNotOpen,
+        }
     }
 }
