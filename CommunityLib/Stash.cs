@@ -13,15 +13,20 @@ namespace CommunityLib
     public class Stash
     {
         /// <summary>
-        /// Return the InventoryControlWrapper for an item and its class
+        /// Finds an item in the current stash tab (by name)
         /// </summary>
         /// <param name="itemName"></param>
-        /// <returns>StashItem</returns>
+        /// <returns>CachedItem</returns>
         public static CachedItem FindItemInStashTab(string itemName)
         {
             return FindItemInStashTab(d => d.FullName.Equals(itemName));
         }
 
+        /// <summary>
+        /// Finds an item in the current stash tab (matching condition)
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <returns>CachedItem</returns>
         public static CachedItem FindItemInStashTab(CommunityLib.FindItemDelegate condition)
         {
             //If it's regular tab then it's rather simple
@@ -164,7 +169,7 @@ namespace CommunityLib
 
             if (StashUI.TabControl.CurrentTabName != stashTabName)
             {
-                var isSwitchedErr = StashUI.TabControl.SwitchToTabKeyboard(stashTabName);
+                var isSwitchedErr = StashUI.TabControl.SwitchToTabMouse(stashTabName);
                 if (isSwitchedErr != SwitchToTabResult.None)
                 {
                     CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the tab: {0}", isSwitchedErr);
