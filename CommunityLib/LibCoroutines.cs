@@ -69,7 +69,7 @@ namespace CommunityLib
                 if (LokiPoe.Me.IsInHideout)
                     return Results.OpenStashError.NoStash;
 
-                var mtl = await Movement.MoveToLocation(
+                var mtl = await Navigation.MoveToLocation(
                     ExilePather.FastWalkablePositionFor(Actor.GuessStashLocation()), 25, 60000,
                     () => Stash.DetermineStash(guild) != null && Stash.DetermineStash(guild).Distance < 75);
 
@@ -84,7 +84,7 @@ namespace CommunityLib
             if (stash.Distance > 30)
             {
                 var p = stash.Position;
-                if (!await Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(p), 25, 15000, () => false))
+                if (!await Navigation.MoveToLocation(ExilePather.FastWalkablePositionFor(p), 25, 15000, () => false))
                     return Results.OpenStashError.CouldNotMoveToStash;
             }
 
@@ -102,7 +102,7 @@ namespace CommunityLib
                 if (!await Dialog.WaitForPanel(Dialog.PanelType.GuildStash))
                     return Results.OpenStashError.StashPanelDidNotOpen;
 
-                await Stash.WaitForStashTabChange(-1, 10000, true);
+                await Stash.WaitForStashTabChange(guild: true);
             }
             else
             {
@@ -137,7 +137,7 @@ namespace CommunityLib
 
                 if (
                     !await
-                        Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(Actor.GuessWaypointLocation()), 25,
+                        Navigation.MoveToLocation(ExilePather.FastWalkablePositionFor(Actor.GuessWaypointLocation()), 25,
                             60000, () => LokiPoe.ObjectManager.Waypoint != null))
                 {
                     return Results.OpenWaypointError.CouldNotMoveToWaypoint;
@@ -152,7 +152,7 @@ namespace CommunityLib
 
             if (ExilePather.PathDistance(LokiPoe.MyPosition, waypoint.Position) > 30)
             {
-                if (!await Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(waypoint.Position), 25, 15000, () => false))
+                if (!await Navigation.MoveToLocation(ExilePather.FastWalkablePositionFor(waypoint.Position), 25, 15000, () => false))
                 {
                     return Results.OpenWaypointError.CouldNotMoveToWaypoint;
                 }
@@ -224,7 +224,7 @@ namespace CommunityLib
                 if (pos == Vector2i.Zero)
                     return Results.TalkToNpcError.NoNpc;
 
-                if (!await Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(pos), 25, 60000, () => LokiPoe.ObjectManager.GetObjectByName(name) != null))
+                if (!await Navigation.MoveToLocation(ExilePather.FastWalkablePositionFor(pos), 25, 60000, () => LokiPoe.ObjectManager.GetObjectByName(name) != null))
                     return Results.TalkToNpcError.CouldNotMoveToNpc;
 
                 npc = LokiPoe.ObjectManager.GetObjectByName(name);
@@ -234,7 +234,7 @@ namespace CommunityLib
 
             if (ExilePather.PathDistance(LokiPoe.MyPosition, npc.Position) > 30)
             {
-                if (!await Movement.MoveToLocation(ExilePather.FastWalkablePositionFor(npc.Position), 25, 15000, () => false))
+                if (!await Navigation.MoveToLocation(ExilePather.FastWalkablePositionFor(npc.Position), 25, 15000, () => false))
                     return Results.TalkToNpcError.CouldNotMoveToNpc;
 
                 npc = LokiPoe.ObjectManager.GetObjectByName(name);
@@ -398,7 +398,7 @@ namespace CommunityLib
             var pos = ExilePather.FastWalkablePositionFor(portal);
             CommunityLib.Log.DebugFormat($"[TakeClosestPortal] The portal was found at {pos}.");
 
-            if (!await Movement.MoveToLocation(pos, 5, 10000, () => false))
+            if (!await Navigation.MoveToLocation(pos, 5, 10000, () => false))
                 return false;
 
             var hash = LokiPoe.LocalData.AreaHash;

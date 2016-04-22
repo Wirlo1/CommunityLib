@@ -261,7 +261,7 @@ namespace CommunityLib
 
             if (string.IsNullOrEmpty(stashTabName))
             {
-                var isSwitchedFtErr = GoToFirstTab(); //Stash.GoToFirstTab()
+                var isSwitchedFtErr = GoToFirstTab();
                 if (isSwitchedFtErr != SwitchToTabResult.None)
                 {
                     CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the first tab");
@@ -302,6 +302,8 @@ namespace CommunityLib
                 if (sw.ElapsedMilliseconds > timeout)
                     return false;
             }
+
+            await Coroutines.ReactionWait();
             return true;
         }
 
