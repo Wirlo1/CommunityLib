@@ -169,7 +169,7 @@ namespace CommunityLib
 
             if (StashUI.TabControl.CurrentTabName != stashTabName)
             {
-                var isSwitchedErr = StashUI.TabControl.SwitchToTabKeyboard(stashTabName);
+                var isSwitchedErr = StashUI.TabControl.SwitchToTabMouse(stashTabName);
                 if (isSwitchedErr != SwitchToTabResult.None)
                 {
                     CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the tab: {0}", isSwitchedErr);
