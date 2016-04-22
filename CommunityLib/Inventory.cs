@@ -114,8 +114,9 @@ namespace CommunityLib
         /// <param name="inv">This is the location where the item is picked up (can be stash or whatever you want)</param>
         /// <param name="id">This is the item localid</param>
         /// <param name="retries">Number of max fastmove attempts</param>
+        /// <param name="breakFunc">If specified condition return true, FastMove will canceled and false will be returned</param>
         /// <returns>FastMoveResult enum entry</returns>
-        public static async Task<bool> FastMove(InventoryControlWrapper inv, int id, int retries = 3)
+        public static async Task<bool> FastMove(InventoryControlWrapper inv, int id, int retries = 3, Func<bool> breakFunc = null )
         {
             // If the inventory is null for reasons, throw ana application-level error
             if (inv == null)
@@ -140,6 +141,10 @@ namespace CommunityLib
             int nextFastMoveTries = 0;
             while (nextFastMoveTries < retries)
             {
+                if (breakFunc != null)
+                    if (breakFunc())
+                        return false;
+
                 // Verifying if the item exists in the source inventory
                 // If not, the item has been moved return true
                 var itemExists = inv.Inventory.GetItemById(id);

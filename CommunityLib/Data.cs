@@ -31,6 +31,7 @@ namespace CommunityLib
                 new Tuple<string, string, Vector2i>("3_town", "Hargan", new Vector2i(281, 357)),
                 new Tuple<string, string, Vector2i>("4_town", "Kira", new Vector2i(169, 500)),
                 new Tuple<string, string, Vector2i>("4_town", "Petarus and Vanja", new Vector2i(204, 546))
+                //TODO add other NPC's, eg. Tasuni in Act 4 and the quest guys on the right
             };
 
         public static readonly Dictionary<string, Vector2i> WaypointsLocations =
@@ -55,7 +56,7 @@ namespace CommunityLib
 
         public static readonly ReadOnlyCollection<string> CurrencyList = new ReadOnlyCollection<string>(Currency);
         
-        public static List<Stash.ExtendedStashItem> CachedItemsInStash = new List<Stash.ExtendedStashItem>();
+        public static List<Stash.StashItem> CachedItemsInStash = new List<Stash.StashItem>();
         /// <summary>
         /// If set to true UpdateItemsInStash will have no effect. It's automatically setting to false on every area change. Use it only if you know what you are doing!
         /// </summary>
@@ -64,13 +65,12 @@ namespace CommunityLib
         /// <summary>
         /// Goes to stash, parse every file and save's it in the CachedItemsInStash. It can be runned only once per area change. Other tries will not work (to save time)
         /// </summary>
+        /// <param name="force">You can force updating. Use at your own risk!</param>
         /// <returns></returns>
-        public static async Task<bool> UpdateItemsInStash()
+        public static async Task<bool> UpdateItemsInStash( bool force = false )
         {
-            //return Communication.GenericExecute<bool>("CommunityLib", "CacheItems", null);
-
             //No need to do it again
-            if (ItemsInStashAlreadyCached)
+            if (ItemsInStashAlreadyCached && !force)
                 return true;
 
             // If stash isn't opened, abort this and return
@@ -93,7 +93,7 @@ namespace CommunityLib
                 if (!LokiPoe.InGameState.StashUi.IsOpened)
                 {
                     CommunityLib.Log.InfoFormat("[CommunityLib][UpdateItemsInStash] Stash not opened? Trying again.");
-                    return await UpdateItemsInStash();
+                    return await UpdateItemsInStash(force);
                 }
 
                 //Different handling for currency tabs
@@ -103,7 +103,7 @@ namespace CommunityLib
                         .Where(wrp => wrp.CurrencyTabItem != null))
                     {
                         CachedItemsInStash.Add( 
-                            new Stash.ExtendedStashItem(wrapper, wrapper.CurrencyTabItem.LocalId, 
+                            new Stash.StashItem(wrapper, wrapper.CurrencyTabItem.LocalId, 
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                             );
                     }
@@ -112,7 +112,7 @@ namespace CommunityLib
                 {
                     foreach (var item in LokiPoe.InGameState.StashUi.InventoryControl.Inventory.Items)
                         CachedItemsInStash.Add(
-                            new Stash.ExtendedStashItem(LokiPoe.InGameState.StashUi.InventoryControl, item.LocalId,
+                            new Stash.StashItem(LokiPoe.InGameState.StashUi.InventoryControl, item.LocalId,
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                             );
                 }

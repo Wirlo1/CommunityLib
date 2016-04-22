@@ -46,6 +46,7 @@ namespace CommunityLib
                 }
 
                 LokiPoe.Input.SimulateKeyEvent(LokiPoe.Input.Binding.open_inventory_panel, true, false, false);
+                await Coroutines.LatencyWait();
                 await Coroutines.ReactionWait();
             }
 
