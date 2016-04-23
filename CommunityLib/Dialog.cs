@@ -15,7 +15,8 @@ namespace CommunityLib
             Sell,
             NpcDialog,
             Stash,
-            GuildStash
+            GuildStash,
+            DivinationCardsTrade
         }
 
         /// <summary>
@@ -138,6 +139,9 @@ namespace CommunityLib
                         break;
                     case PanelType.GuildStash:
                         condition = () => LokiPoe.InGameState.GuildStashUi.IsOpened;
+                        break;
+                    case PanelType.DivinationCardsTrade:
+                        condition = () => LokiPoe.InGameState.CardTradeUi.IsOpened;
                         break;
             }
 

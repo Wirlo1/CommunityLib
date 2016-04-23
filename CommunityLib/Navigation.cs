@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
 using Loki.Bot;
@@ -148,6 +149,7 @@ namespace CommunityLib
                 return LokiPoe.InGameState.TakeWaypointResult.None;
 
             await Coroutines.CloseBlockingWindows();
+
             var opened = await LibCoroutines.OpenWaypoint();
             if (opened != Results.OpenWaypointError.None)
             {
@@ -155,10 +157,15 @@ namespace CommunityLib
                 return LokiPoe.InGameState.TakeWaypointResult.WaypointControlNotVisible;
             }
 
+            var areaId = name == "Hideout" ? "" : GetZoneId(difficulty.ToString(), name);
+            //var areaId = LokiPoe.GetZoneId(difficulty.ToString(), name);
+
+            CommunityLib.Log.InfoFormat($"[TakeWaypoint] Going to {name} at {difficulty}. AreaID {areaId}");
+
             var areaHash = LokiPoe.LocalData.AreaHash;
             var taken = name == "Hideout"
                 ? LokiPoe.InGameState.WorldUi.GoToHideout()
-                : LokiPoe.InGameState.WorldUi.TakeWaypoint(LokiPoe.GetZoneId(difficulty.ToString(), name), newInstance, Int32.MaxValue);
+                : LokiPoe.InGameState.WorldUi.TakeWaypoint(areaId, newInstance, Int32.MaxValue);
 
             if (taken != LokiPoe.InGameState.TakeWaypointResult.None)
             {
@@ -168,6 +175,42 @@ namespace CommunityLib
 
             var awaited = await Areas.WaitForAreaChange(areaHash);
             return awaited ? LokiPoe.InGameState.TakeWaypointResult.None : LokiPoe.InGameState.TakeWaypointResult.CouldNotJoinNewInstance;
+        }
+
+        public static string GetZoneId(string difficulty, string zoneName)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            string str1 = difficulty.ToLowerInvariant();
+            if (str1 == "normal")
+                stringBuilder.Append("1_");
+            else if (str1 == "cruel")
+                stringBuilder.Append("2_");
+            else
+                stringBuilder.Append("3_");
+             
+
+            if (zoneName == "Lioneye's Watch")
+            {
+                stringBuilder.Append("1_town");
+                return stringBuilder.ToString();
+            }
+            if (zoneName == "The Forest Encampment")
+            {
+                stringBuilder.Append("2_town");
+                return stringBuilder.ToString();
+            }
+            if (zoneName == "The Sarn Encampment")
+            {
+                stringBuilder.Append("3_town");
+                return stringBuilder.ToString();
+            }
+            if (zoneName == "Highgate")
+            {
+                stringBuilder.Append("4_town");
+                return stringBuilder.ToString();
+            }
+
+            return LokiPoe.GetZoneId(difficulty, zoneName);
         }
     }
 }
