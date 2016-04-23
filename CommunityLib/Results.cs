@@ -31,9 +31,14 @@
             ItemNotFoundInTab,
         }
 
+        /// <summary>
+        /// Errors for the FastGoToHideOutFunction
+        /// </summary>
         public enum FastGoToHideoutResult
         {
+            /// <summary>Function ran succesfully. The bot is in hideout.</summary>
             None,
+            /// <summary>You can't go to hideout using this function from outside the town</summary>
             NotInTown,
             NotInGame,
             NoHideout,

@@ -56,7 +56,8 @@ namespace CommunityLib
 
         public static readonly ReadOnlyCollection<string> CurrencyList = new ReadOnlyCollection<string>(Currency);
         
-        public static List<CachedItem> CachedItemsInStash = new List<CachedItem>();
+        public static List<CachedItemObject> CachedItemsInStash = new List<CachedItemObject>();
+
         /// <summary>
         /// If set to true UpdateItemsInStash will have no effect. It's automatically setting to false on every area change. Use it only if you know what you are doing!
         /// </summary>
@@ -101,18 +102,16 @@ namespace CommunityLib
                 {
                     foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTabInventoryControls
                         .Where(wrp => wrp.CurrencyTabItem != null))
-                    {
                         CachedItemsInStash.Add( 
-                            new CachedItem(wrapper, wrapper.CurrencyTabItem.LocalId, 
+                            new CachedItemObject(wrapper, wrapper.CurrencyTabItem, 
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                             );
-                    }
                 }
                 else
                 {
                     foreach (var item in LokiPoe.InGameState.StashUi.InventoryControl.Inventory.Items)
                         CachedItemsInStash.Add(
-                            new CachedItem(LokiPoe.InGameState.StashUi.InventoryControl, item.LocalId,
+                            new CachedItemObject(LokiPoe.InGameState.StashUi.InventoryControl, item,
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                             );
                 }

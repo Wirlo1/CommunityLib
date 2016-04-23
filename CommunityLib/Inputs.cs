@@ -1,11 +1,17 @@
-﻿using System.Threading.Tasks;
+﻿using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Buddy.Coroutines;
 using Loki.Bot;
 using Loki.Game;
+using Loki.Game.GameData;
 
 namespace CommunityLib
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class Inputs
     {
         public static async Task<Results.ClearCursorResults> ClearCursorTask(int maxTries = 3)
@@ -42,10 +48,20 @@ namespace CommunityLib
                         return Results.ClearCursorResults.InventoryNotOpened;
                 }
 
-                var res = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.PlaceCursorInto();
+                int col, row;
+                if (!LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.CanFitItem(cursorhasitem.Size, out col, out row))
+                {
+                    CommunityLib.Log.ErrorFormat("[CommunityLib][ClearCursorTask] Now stopping the bot because it cannot continue.");
+                    BotManager.Stop();
+                    return Results.ClearCursorResults.NoSpaceInInventory;
+                }
+
+                var res = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.PlaceCursorInto(col, row);
                 if (res == PlaceCursorIntoResult.None)
                 {
-                    await Coroutines.LatencyWait();
+                    if (!await WaitForCursorToBeEmpty())
+                        CommunityLib.Log.ErrorFormat("[CommunityLib][ClearCursorTask] WaitForCursorToBeEmpty failed.");
+
                     await Coroutines.ReactionWait();
                     return Results.ClearCursorResults.None;
                 }
@@ -67,6 +83,38 @@ namespace CommunityLib
             }
 
             return Results.ClearCursorResults.None;
+        }
+
+        public static async Task<bool> WaitForCursorToBeEmpty(int timeout = 10000)
+        {
+            var sw = Stopwatch.StartNew();
+            while (LokiPoe.InstanceInfo.GetPlayerInventoryItemsBySlot(InventorySlot.Cursor).Any())
+            {
+                CommunityLib.Log.InfoFormat("[WaitForCursorToBeEmpty] Waiting for the cursor to be empty.");
+                await Coroutines.LatencyWait();
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.InfoFormat("[WaitForCursorToBeEmpty] Timeout while waiting for the cursor to become empty.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static async Task<bool> WaitForCursorToHaveItem(int timeout = 10000)
+        {
+            var sw = Stopwatch.StartNew();
+            while (!LokiPoe.InstanceInfo.GetPlayerInventoryItemsBySlot(InventorySlot.Cursor).Any())
+            {
+                CommunityLib.Log.InfoFormat("[WaitForCursorToHaveItem] Waiting for the cursor to have an item.");
+                await Coroutines.LatencyWait();
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.InfoFormat("[WaitForCursorToHaveItem] Timeout while waiting for the cursor to contain an item.");
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }
