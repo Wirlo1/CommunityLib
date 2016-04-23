@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Buddy.Coroutines;
 using Loki.Bot;
+using Loki.Common;
 using Loki.Game;
 using Loki.Game.Objects;
 using StashUI = Loki.Game.LokiPoe.InGameState.StashUi;
@@ -13,21 +15,21 @@ namespace CommunityLib
     public class Stash
     {
         /// <summary>
-        /// Finds an item in the current stash tab (by name)
+        /// Return the InventoryControlWrapper for an item and its class
         /// </summary>
         /// <param name="itemName"></param>
-        /// <returns>CachedItem</returns>
-        public static CachedItem FindItemInStashTab(string itemName)
+        /// <returns>StashItem</returns>
+        public static CachedItemObject FindItemInStashTab(string itemName)
         {
             return FindItemInStashTab(d => d.FullName.Equals(itemName));
         }
 
         /// <summary>
-        /// Finds an item in the current stash tab (matching condition)
+        /// Return the InventoryControlWrapper for an item and its class
         /// </summary>
         /// <param name="condition"></param>
-        /// <returns>CachedItem</returns>
-        public static CachedItem FindItemInStashTab(CommunityLib.FindItemDelegate condition)
+        /// <returns>StashItem</returns>
+        public static CachedItemObject FindItemInStashTab(CommunityLib.FindItemDelegate condition)
         {
             //If it's regular tab then it's rather simple
             if (!StashUI.StashTabInfo.IsPremiumCurrency)
@@ -36,7 +38,7 @@ namespace CommunityLib
                 var item = StashUI.InventoryControl.Inventory.Items.FirstOrDefault(d => condition(d));
                 // Return it if this one is not null
                 if (item != null)
-                    return new CachedItem(StashUI.InventoryControl, item.LocalId, StashUI.TabControl.CurrentTabName);
+                    return new CachedItemObject(StashUI.InventoryControl, item, StashUI.TabControl.CurrentTabName);
             }
 
             //Premium stash tab
@@ -45,10 +47,47 @@ namespace CommunityLib
                 var wrapper = StashUI.CurrencyTabInventoryControls.FirstOrDefault(d => d.CurrencyTabItem != null && condition(d.CurrencyTabItem));
                 var item = wrapper?.CurrencyTabItem;
                 if (item != null)
-                    return new CachedItem(wrapper, item.LocalId, StashUI.TabControl.CurrentTabName);
+                    return new CachedItemObject(wrapper, item, StashUI.TabControl.CurrentTabName);
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Return the InventoryControlWrapper for an item and its class
+        /// </summary>
+        /// <param name="itemName"></param>
+        /// <returns>StashItem</returns>
+        public static List<CachedItemObject> FindItemsInStashTab(string itemName)
+        {
+            return FindItemsInStashTab(d => d.FullName.Equals(itemName));
+        }
+
+        public static List<CachedItemObject> FindItemsInStashTab(CommunityLib.FindItemDelegate condition)
+        {
+            var ret = new List<CachedItemObject>();
+            //If it's regular tab then it's rather simple
+            if (!StashUI.StashTabInfo.IsPremiumCurrency)
+            {
+                // Gather the first item matching the condition
+                var items = StashUI.InventoryControl.Inventory.Items.Where(d => condition(d)).ToList();
+                foreach (var item in items)
+                    ret.Add(new CachedItemObject(StashUI.InventoryControl, item, StashUI.TabControl.CurrentTabName));
+            }
+
+            //Premium stash tab
+            else
+            {
+                var wrappers = StashUI.CurrencyTabInventoryControls.Where(d => d.CurrencyTabItem != null && condition(d.CurrencyTabItem)).ToList();
+                foreach (var wrapper in wrappers)
+                {
+                    var item = wrapper?.CurrencyTabItem;
+                    if (item != null)
+                        ret.Add(new CachedItemObject(wrapper, item, StashUI.TabControl.CurrentTabName));
+                }
+            }
+
+            return ret;
         }
 
         /// <summary>
@@ -56,7 +95,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="itemName">The item name</param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> FindTabContainingItem(string itemName)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItemObject>> FindTabContainingItem(string itemName)
         {
             return await FindTabContainingItem(d => d.FullName.Equals(itemName));
         }
@@ -67,11 +106,11 @@ namespace CommunityLib
         /// </summary>
         /// <param name="condition">Condition to pass item through</param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> FindTabContainingItem(CommunityLib.FindItemDelegate condition)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItemObject>> FindTabContainingItem(CommunityLib.FindItemDelegate condition)
         {
             // If stash isn't opened, abort this and return
             if (!await OpenStashTabTask())
-                return new Tuple<Results.FindItemInTabResult, CachedItem>(Results.FindItemInTabResult.GuiNotOpened, null);
+                return new Tuple<Results.FindItemInTabResult, CachedItemObject>(Results.FindItemInTabResult.GuiNotOpened, null);
 
             // If we fail to go to first tab, return
             // if (GoToFirstTab() != SwitchToTabResult.None)
@@ -92,7 +131,7 @@ namespace CommunityLib
                     {
                         // If we tried 3 times to switch and failed, return
                         if (switchAttemptsPerTab > 2)
-                            return new Tuple<Results.FindItemInTabResult, CachedItem>(Results.FindItemInTabResult.SwitchToTabFailed, null);
+                            return new Tuple<Results.FindItemInTabResult, CachedItemObject>(Results.FindItemInTabResult.SwitchToTabFailed, null);
 
                         var switchTab = StashUI.TabControl.SwitchToTabMouse(tabName);
 
@@ -112,10 +151,10 @@ namespace CommunityLib
                 }
 
                 // We Found a tab, return informations
-                return new Tuple<Results.FindItemInTabResult, CachedItem>(Results.FindItemInTabResult.None, it);
+                return new Tuple<Results.FindItemInTabResult, CachedItemObject>(Results.FindItemInTabResult.None, it);
             }
 
-            return new Tuple<Results.FindItemInTabResult, CachedItem>(Results.FindItemInTabResult.ItemNotFoundInTab, null);
+            return new Tuple<Results.FindItemInTabResult, CachedItemObject>(Results.FindItemInTabResult.ItemNotFoundInTab, null);
         }
 
         /// <summary>
@@ -163,7 +202,7 @@ namespace CommunityLib
                     CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the first tab");
                     return false;
                 }
-
+                await WaitForStashTabChange();
                 return true;
             }
 
@@ -175,6 +214,7 @@ namespace CommunityLib
                     CommunityLib.Log.ErrorFormat("[OpenStashTab] Fail to switch to the tab: {0}", isSwitchedErr);
                     return false;
                 }
+                await WaitForStashTabChange();
             }
 
             return true;
@@ -194,6 +234,14 @@ namespace CommunityLib
             while (invTab == null || invTab.InventoryId == lastId)
             {
                 await Coroutine.Sleep(1);
+
+                if (guild)
+                    if (!LokiPoe.InGameState.GuildStashUi.IsOpened)
+                        return false;
+                else
+                    if (!StashUI.IsOpened)
+                        return false;
+
                 invTab = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo : StashUI.StashTabInfo;
                 if (sw.ElapsedMilliseconds > timeout)
                     return false;

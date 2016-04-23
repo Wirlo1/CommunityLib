@@ -6,7 +6,7 @@ namespace CommunityLib
 {
     public static class Tasks
     {
-        private static readonly TaskManager GrindBotTaskManager = Communication.GetCurrentBotTaskManager();
+        private static readonly TaskManager CurrentTaskManager = Communication.GetCurrentBotTaskManager();
 
         public enum AddType
         {
@@ -41,16 +41,16 @@ namespace CommunityLib
             switch (type)
             {
                 case AddType.Front:
-                    added = GrindBotTaskManager.AddAtFront(task);
+                    added = CurrentTaskManager.AddAtFront(task);
                     break;
                 case AddType.Before:
-                    added = GrindBotTaskManager.AddBefore(task, name);
+                    added = CurrentTaskManager.AddBefore(task, name);
                     break;
                 case AddType.After:
-                    added = GrindBotTaskManager.AddAfter(task, name);
+                    added = CurrentTaskManager.AddAfter(task, name);
                     break;
                 case AddType.Replace:
-                    added = GrindBotTaskManager.Replace(name, task);
+                    added = CurrentTaskManager.Replace(name, task);
                     break;
             }
             if (!added)
@@ -67,11 +67,17 @@ namespace CommunityLib
 
         public static void RemoveTask(string name, bool stoponerror = true)
         {
-            if (!GrindBotTaskManager.Remove(name))
+            if (!CurrentTaskManager.Remove(name))
             {
                 CommunityLib.Log.ErrorFormat("[TaskHelpers] Fail to remove \"{0}\".", name);
                 if (stoponerror) BotManager.Stop();
             }
+        }
+
+        public static bool Exists(string name)
+        {
+            var n = CurrentTaskManager.GetTaskByName(name);
+            return n != null;
         }
     }
 }

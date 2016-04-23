@@ -19,7 +19,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="itemName"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> SearchForItem(string itemName)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItemObject>> SearchForItem(string itemName)
         {
             //Open Inventory panel
             return await SearchForItem(d => d.FullName.Equals(itemName));
@@ -30,7 +30,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="condition"></param>
         /// <returns></returns>
-        public static async Task<Tuple<Results.FindItemInTabResult, CachedItem>> SearchForItem(CommunityLib.FindItemDelegate condition)
+        public static async Task<Tuple<Results.FindItemInTabResult, CachedItemObject>> SearchForItem(CommunityLib.FindItemDelegate condition)
         {
             //Open Inventory panel
             if (!LokiPoe.InGameState.InventoryUi.IsOpened)
@@ -41,10 +41,10 @@ namespace CommunityLib
 
             var item = LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.FirstOrDefault(d => condition(d));
             if (item != null)
-                return new Tuple<Results.FindItemInTabResult, CachedItem>
+                return new Tuple<Results.FindItemInTabResult, CachedItemObject>
                     (
                     Results.FindItemInTabResult.None,
-                    new CachedItem(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item.LocalId)
+                    new CachedItemObject(LokiPoe.InGameState.InventoryUi.InventoryControl_Main, item)
                     );
 
             //Now let's look in Stash
@@ -125,6 +125,10 @@ namespace CommunityLib
             // Here the idea is to make a first fastmove attempt to get an error
             // If the error is different of None, return the error
             var err = inv.FastMove(id);
+            //We assume it's currency stash tab, do not use LocalId with it
+            if (err == FastMoveResult.Unsupported)
+                err = inv.FastMove();
+
             if (err != FastMoveResult.None)
             {
                 CommunityLib.Log.ErrorFormat("[CommunityLib][FastMove] FastMove has returned an error : {0}", err);
@@ -159,7 +163,10 @@ namespace CommunityLib
                 if (nextfastmovetimer.ElapsedMilliseconds > nextFastMove)
                 {
                     CommunityLib.Log.DebugFormat("[CommunityLib][FastMove] Attempt to fastmove ({0}/{1})", nextFastMoveTries, retries);
-                    inv.FastMove(id);
+                    var error = inv.FastMove(id);
+                    if (error == FastMoveResult.Unsupported)
+                        inv.FastMove();
+
                     await Coroutines.LatencyWait();
                     await Coroutines.ReactionWait();
                     nextFastMove = LokiPoe.Random.Next(2500, 4000);
@@ -302,7 +309,11 @@ namespace CommunityLib
 
         public static async Task<bool> SplitAndPlaceItemInMainInventory(InventoryControlWrapper wrapper, Item item, int pickupAmount)
         {
-            CommunityLib.Log.DebugFormat("[SplitAndPlaceItemInMainInventory] Spliting up stacks. Getting {0} items.", pickupAmount);
+            CommunityLib.Log.DebugFormat("[SplitAndPlaceItemInMainInventory] Spliting up stacks. Getting {0} {1}. Count in stack: {2}", pickupAmount, item.FullName, item.StackCount);
+
+            if (pickupAmount >= item.StackCount)
+                return await FastMove(wrapper, item.LocalId);
+
             var error = wrapper.SplitStack(item.LocalId, pickupAmount);
             //We assume it's currency stash tab, do not use LocalId with it
             if (error == SplitStackResult.Unsupported)
@@ -314,7 +325,7 @@ namespace CommunityLib
                 return false;
             }
 
-            await Coroutines.LatencyWait();
+            await Inputs.WaitForCursorToHaveItem();
             await Coroutines.ReactionWait();
 
             await Inputs.ClearCursorTask();
