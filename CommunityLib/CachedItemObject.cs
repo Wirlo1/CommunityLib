@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using Buddy.Coroutines;
-using Loki.Bot;
 using Loki.Game;
 using Loki.Game.GameData;
 using Loki.Game.Objects;
@@ -48,6 +46,7 @@ namespace CommunityLib
         public bool HasMicrotransitionAttachment { get; set; }
         public List<CachedModAffix> ImplicitAffixes { get; set; }
         public Dictionary<string, int> ImplicitStats { get; set; }
+        public InventoryType InventoryType { get; set; }
         public bool IsAmuletType { get; set; }
         public bool IsArmorType { get; set; }
         public bool IsBeltType { get; set; }
@@ -88,7 +87,7 @@ namespace CommunityLib
         public bool IsWandType { get; set; }
         public bool IsWeaponType { get; set; }
         public int ItemLevel { get; set; }
-        public string ItemType { get; set; }
+        public InventoryType ItemType { get; set; }
         public int LocalId { get; set; }
         public Dictionary<string, int> LocalStats { get; set; }
         public Vector LocationBottomRight { get; set; }
@@ -312,7 +311,10 @@ namespace CommunityLib
             {
                 var isHere = Data.CachedItemsInStash.Contains(this);
                 if (isHere)
+                {
+                    CommunityLib.Log.Debug("[CommunityLib][StashCache] An item is being removed from cache");
                     Data.CachedItemsInStash.Remove(this);
+                } 
             }
         }
 
@@ -404,7 +406,7 @@ namespace CommunityLib
             IsWandType = item.IsWandType;
             IsWeaponType = item.IsWeaponType;
             ItemLevel = item.ItemLevel;
-            ItemType = item.ItemType.ToString();
+            ItemType = item.ItemType;
             LocalId = item.LocalId;
             LocalStats = new Dictionary<string, int>();
             foreach (var localStat in item.LocalStats)

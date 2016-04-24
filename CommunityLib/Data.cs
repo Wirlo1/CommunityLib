@@ -141,5 +141,61 @@ namespace CommunityLib
             ItemsInStashAlreadyCached = true;
             return true;
         }
+
+        /// <summary>
+        /// Forces the update of a specific tab
+        /// It first removes the items that were in this one last check
+        /// Then just reparse the whole tab
+        /// Note : This function doesn't take care about the ItemInStashAlreadyCached var
+        /// </summary>
+        /// <param name="tabName">Tab name to be re-parsed</param>
+        /// <returns>true if everything went well</returns>
+        public static async Task<bool> UpdateSpecificTab(string tabName)
+        {
+            if (string.IsNullOrEmpty(tabName))
+                return false;
+
+            if (!await Stash.OpenStashTabTask(tabName))
+                return false;
+
+            // Stash should be open, processing cached data in this tab
+            // First remove every item in that one
+            CachedItemsInStash.RemoveAll(i => i.TabName.Equals(tabName));
+
+            // Then process the tab
+            if (!LokiPoe.IsInGame)
+            {
+                CommunityLib.Log.ErrorFormat("[CommunityLib][UpdateSpecificTab] Disconnected?");
+                return false;
+            }
+
+            //Stash not opened
+            if (!LokiPoe.InGameState.StashUi.IsOpened)
+            {
+                CommunityLib.Log.InfoFormat("[CommunityLib][UpdateSpecificTab] Stash not opened... returning false");
+                return false;
+            }
+
+            if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumCurrency)
+            {
+                foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTabInventoryControls
+                    .Where(wrp => wrp.CurrencyTabItem != null))
+                    CachedItemsInStash.Add(
+                        new CachedItemObject(wrapper, wrapper.CurrencyTabItem,
+                            LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
+                        );
+            }
+            else
+            {
+                foreach (var item in LokiPoe.InGameState.StashUi.InventoryControl.Inventory.Items)
+                    CachedItemsInStash.Add(
+                        new CachedItemObject(LokiPoe.InGameState.StashUi.InventoryControl, item,
+                            LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
+                        );
+            }
+
+            await Coroutines.LatencyWait(2);
+            return true;
+        }
     }
 }
