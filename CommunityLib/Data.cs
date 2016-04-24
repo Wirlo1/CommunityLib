@@ -135,7 +135,7 @@ namespace CommunityLib
 
                 //Sleep to not look too bottish
                 await Stash.WaitForStashTabChange(lastId);
-                await Coroutines.LatencyWait(2);
+                //await Coroutines.LatencyWait(2);
             }
 
             ItemsInStashAlreadyCached = true;

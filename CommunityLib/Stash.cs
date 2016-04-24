@@ -247,8 +247,8 @@ namespace CommunityLib
                     return false;
             }
 
-            await Coroutines.LatencyWait();
-            await Coroutines.ReactionWait();
+            await Coroutines.LatencyWait((float)MathEx.Random(.5d, 2d));
+            //await Coroutines.ReactionWait();
             return true;
         }
 
