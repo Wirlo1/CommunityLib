@@ -101,7 +101,7 @@ namespace CommunityLib
                 if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumCurrency)
                 {
                     foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTabInventoryControls
-                        .Where(wrp => wrp.CurrencyTabItem != null).ToList())
+                        .Where(wrp => wrp.CurrencyTabItem != null))
                         CachedItemsInStash.Add( 
                             new CachedItemObject(wrapper, wrapper.CurrencyTabItem, 
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
@@ -135,7 +135,7 @@ namespace CommunityLib
 
                 //Sleep to not look too bottish
                 await Stash.WaitForStashTabChange(lastId);
-                await Coroutines.LatencyWait(2);
+                //await Coroutines.LatencyWait(2);
             }
 
             ItemsInStashAlreadyCached = true;
