@@ -6,7 +6,7 @@ namespace CommunityLib
 {
     public static class Tasks
     {
-        private static readonly TaskManager CurrentTaskManager = Communication.GetCurrentBotTaskManager();
+        public static readonly TaskManager CurrentTaskManager = Communication.GetCurrentBotTaskManager();
 
         public enum AddType
         {
@@ -69,8 +69,11 @@ namespace CommunityLib
         {
             if (!CurrentTaskManager.Remove(name))
             {
-                CommunityLib.Log.ErrorFormat("[TaskHelpers] Fail to remove \"{0}\".", name);
-                if (stoponerror) BotManager.Stop();
+                if (stoponerror)
+                {
+                    CommunityLib.Log.ErrorFormat("[TaskHelpers] Fail to remove \"{0}\".", name);
+                    BotManager.Stop();
+                }
             }
         }
 
