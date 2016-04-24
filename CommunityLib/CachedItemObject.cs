@@ -6,6 +6,7 @@ using System.Windows;
 using Buddy.Coroutines;
 using Loki.Bot;
 using Loki.Game;
+using Loki.Game.GameData;
 using Loki.Game.Objects;
 
 namespace CommunityLib
@@ -113,7 +114,7 @@ namespace CommunityLib
         public int MinPhysicalDamage { get; set; }
         public string Name { get; set; }
         public int Quality { get; set; }
-        public string Rarity { get; set; }
+        public Rarity Rarity { get; set; }
         public int RequiredDex { get; set; }
         public int RequiredInt { get; set; }
         public int RequiredLevel { get; set; }
@@ -195,12 +196,133 @@ namespace CommunityLib
         {
             //Wrapper = wrp;
             TabName = tabName;
-            ItemId = item.LocalId;
             League = string.Copy(LokiPoe.Me.League);
 
             if (wrp.HasCurrencyTabOverride)
                 MaxCurrencyTabStackCount = item.MaxCurrencyTabStackCount;
 
+            Update(item);
+        }
+
+        /// <summary>
+        /// Opens the stash and the stash tab of this item. 
+        /// <para>If the item is in inventory then it opens the inventory</para>
+        /// </summary>
+        /// <returns></returns>
+        public async Task<bool> GoTo()
+        {
+            if (!string.IsNullOrEmpty(TabName))
+                return await Stash.OpenStashTabTask(TabName);
+
+            //TabName is empty, so it's inventory
+            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
+                return await LibCoroutines.OpenInventoryPanel();
+
+            return true;
+        }
+
+        private async Task<InventoryControlWrapper> GetWrapper()
+        {
+            if (!await GoTo())
+                return null;
+
+            return Wrapper;
+        }
+
+        /// <summary>
+        /// Find the item. Remember to check if it's not null, because something with it might have changed in the meantime.
+        /// <para>If the item is in stash, it's getting opened first and then returning the value.</para>
+        /// <para>if TabName is empty, it assumes the item is in inventory.</para>
+        /// </summary>
+        /// <returns>Opened current stash and the item itself</returns>
+        private async Task<Item> GetItem()
+        {
+            if (!await GoTo())
+                return null;
+
+            return Item;
+        }
+
+        public async Task<bool> FastMove(int retries = 3)
+        {
+            var item = await GetItem();
+            var wrapper = await GetWrapper();
+            if (wrapper == null || item == null)
+            {
+                CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
+                return false;
+            }
+
+            return await Inventory.FastMove(wrapper, item.LocalId, retries);
+        }
+
+        public async Task<ApplyCursorResult> UseOnItem(InventoryControlWrapper destinationWrapper, Item destinationItem,
+            Inventory.StopUsingDelegate delegateToStop = null)
+        {
+            var item = await GetItem();
+            var wrapper = await GetWrapper();
+            if (wrapper == null || item == null)
+            {
+                CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
+                return ApplyCursorResult.ItemNotFound;
+            }
+
+            var res = await Inventory.UseItemOnItem(Wrapper, item, destinationWrapper, destinationItem, delegateToStop);
+
+            //Updating the StackCount now and removing the item if needed
+            await Update();
+
+            return res;
+        }
+
+        public async Task<bool> SplitAndPlaceInMainInventory(int pickupAmount)
+        {
+            var item = await GetItem();
+            var wrapper = await GetWrapper();
+            if (wrapper == null || item == null)
+            {
+                CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
+                return false;
+            }
+
+            var res = await Inventory.SplitAndPlaceItemInMainInventory(wrapper, item, pickupAmount);
+
+            await Update();
+
+            return res;
+        }
+
+        /// <summary>
+        /// Updating the StackCount now and removing the item from cache if needed
+        /// </summary>
+        /// <returns></returns>
+        private async Task Update()
+        {
+            var item = await GetItem();
+            var delete = false;
+            if (item != null)
+            {
+                Update(item);
+                if (StackCount == 0)
+                    delete = true;
+            }
+
+            //Item dissapeared
+            if (item == null || delete)
+            {
+                var isHere = Data.CachedItemsInStash.Contains(this);
+                if (isHere)
+                    Data.CachedItemsInStash.Remove(this);
+            }
+        }
+
+        /// <summary>
+        /// Updates current object with given item
+        /// </summary>
+        /// <param name="item"></param>
+        private void Update(Item item)
+        {
+            ItemId = item.LocalId;
             Affixes = new List<CachedModAffix>();
             foreach (var affixes in item.Affixes)
                 Affixes.Add(new CachedModAffix(affixes));
@@ -313,7 +435,7 @@ namespace CommunityLib
             MinPhysicalDamage = item.MinPhysicalDamage;
             Name = item.Name;
             Quality = item.Quality;
-            Rarity = item.Rarity.ToString();
+            Rarity = item.Rarity;
             RequiredDex = item.RequiredDex;
             RequiredInt = item.RequiredInt;
             RequiredLevel = item.RequiredLevel;
@@ -328,118 +450,6 @@ namespace CommunityLib
             Tags = new List<string>(item.Tags);
             Type = item.ItemType.ToString().Replace('/', ' ');
             IsDivinationCardType = item.IsDivinationCardType;
-        }
-
-        /// <summary>
-        /// Opens the stash and the stash tab of this item. 
-        /// <para>If the item is in inventory then it opens the inventory</para>
-        /// </summary>
-        /// <returns></returns>
-        public async Task<bool> GoTo()
-        {
-            if (!string.IsNullOrEmpty(TabName))
-                return await Stash.OpenStashTabTask(TabName);
-
-            //TabName is empty, so it's inventory
-            if (!LokiPoe.InGameState.InventoryUi.IsOpened)
-                return await LibCoroutines.OpenInventoryPanel();
-
-            return true;
-        }
-
-        private async Task<InventoryControlWrapper> GetWrapper()
-        {
-            if (!await GoTo())
-                return null;
-
-            return Wrapper;
-        }
-
-        /// <summary>
-        /// Find the item. Remember to check if it's not null, because something with it might have changed in the meantime.
-        /// <para>If the item is in stash, it's getting opened first and then returning the value.</para>
-        /// <para>if TabName is empty, it assumes the item is in inventory.</para>
-        /// </summary>
-        /// <returns>Opened current stash and the item itself</returns>
-        private async Task<Item> GetItem()
-        {
-            if (!await GoTo())
-                return null;
-
-            return Item;
-        }
-
-        public async Task<bool> FastMove(int retries = 3)
-        {
-            var item = await GetItem();
-            var wrapper = await GetWrapper();
-            if (wrapper == null || item == null)
-            {
-                CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
-                return false;
-            }
-
-            return await Inventory.FastMove(wrapper, item.LocalId, retries);
-        }
-
-        public async Task<ApplyCursorResult> UseOnItem(InventoryControlWrapper destinationWrapper, Item destinationItem,
-            Inventory.StopUsingDelegate delegateToStop = null)
-        {
-            var item = await GetItem();
-            var wrapper = await GetWrapper();
-            if (wrapper == null || item == null)
-            {
-                CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
-                return ApplyCursorResult.ItemNotFound;
-            }
-
-            var res = await Inventory.UseItemOnItem(Wrapper, item, destinationWrapper, destinationItem, delegateToStop);
-
-            //Updating the StackCount now and removing the item if needed
-            await Update();
-
-            return res;
-        }
-
-        public async Task<bool> SplitAndPlaceInMainInventory(int pickupAmount)
-        {
-            var item = await GetItem();
-            var wrapper = await GetWrapper();
-            if (wrapper == null || item == null)
-            {
-                CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
-                return false;
-            }
-
-            var res = await Inventory.SplitAndPlaceItemInMainInventory(wrapper, item, pickupAmount);
-
-            await Update();
-
-            return res;
-        }
-
-        /// <summary>
-        /// Updating the StackCount now and removing the item from cache if needed
-        /// </summary>
-        /// <returns></returns>
-        private async Task Update()
-        {
-            var item = await GetItem();
-            var delete = false;
-            if (item != null)
-            {
-                StackCount = item.StackCount;
-                if (StackCount == 0)
-                    delete = true;
-            }
-
-            //Item dissapeared
-            if (item == null || delete)
-            {
-                var isHere = Data.CachedItemsInStash.Contains(this);
-                if (isHere)
-                    Data.CachedItemsInStash.Remove(this);
-            }
         }
     }
 
