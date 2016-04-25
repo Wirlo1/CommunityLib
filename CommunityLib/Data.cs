@@ -30,8 +30,10 @@ namespace CommunityLib
                 new Tuple<string, string, Vector2i>("3_town", "Clarissa", new Vector2i(147, 326)),
                 new Tuple<string, string, Vector2i>("3_town", "Hargan", new Vector2i(281, 357)),
                 new Tuple<string, string, Vector2i>("4_town", "Kira", new Vector2i(169, 500)),
-                new Tuple<string, string, Vector2i>("4_town", "Petarus and Vanja", new Vector2i(204, 546))
-                //TODO add other NPC's, eg. Tasuni in Act 4 and the quest guys on the right
+                new Tuple<string, string, Vector2i>("4_town", "Petarus and Vanja", new Vector2i(204, 546)),
+                new Tuple<string, string, Vector2i>("4_town", "Tasuni", new Vector2i(407, 447)),
+                new Tuple<string, string, Vector2i>("4_town", "Lady Dialla", new Vector2i(555, 505)),
+                new Tuple<string, string, Vector2i>("4_town", "Oyun", new Vector2i(566, 498))
             };
 
         public static readonly Dictionary<string, Vector2i> WaypointsLocations =
@@ -194,7 +196,9 @@ namespace CommunityLib
                         );
             }
 
-            await Coroutines.LatencyWait(2);
+            //Await here is not wanted if we'll want to make fast re-caching the updated stash
+            //It's only re-caching, not item usage so no need to use it.
+            //await Coroutines.LatencyWait(2);
             return true;
         }
     }

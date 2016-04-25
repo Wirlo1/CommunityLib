@@ -109,9 +109,9 @@ namespace CommunityLib
 
                 //User have no hideout
                 //TODO: Fix diz (NoHideout message not in enum)
-                var noHideoutMessage = Chat.GetNewChatMessages().Any( d => d.Message.Contains(Dat.LookupClientString(ClientStringsEnum.No).Value) );
-                if (noHideoutMessage)
-                    return Results.FastGoToHideoutResult.NoHideout;
+                //var noHideoutMessage = Chat.GetNewChatMessages().Any(d => d.Message.Contains(Dat.LookupBackendError(BackendErrorEnum.NoHideout).Text));
+                //if (noHideoutMessage)
+                //  return Results.FastGoToHideoutResult.NoHideout;
 
                 // If it exists, and the timer has reached the random lapse we calculated above,
                 if (nextTimer.ElapsedMilliseconds > nextTry)
@@ -142,30 +142,32 @@ namespace CommunityLib
         /// <param name="difficulty"></param>
         /// <param name="newInstance">Do you want to open new instance?</param>
         /// <returns></returns>
-        public static async Task<LokiPoe.InGameState.TakeWaypointResult> TakeWaypoint( string name, Difficulty difficulty, bool newInstance = false )
+        public static async Task<LokiPoe.InGameState.TakeWaypointResult> TakeWaypoint( string name, Difficulty difficulty = Difficulty.Unknown, bool newInstance = false )
         {
             //We are already there
             if (LokiPoe.LocalData.WorldArea.Name == name)
                 return LokiPoe.InGameState.TakeWaypointResult.None;
 
-            await Coroutines.CloseBlockingWindows();
+            //await Coroutines.CloseBlockingWindows();
 
-            var opened = await LibCoroutines.OpenWaypoint();
-            if (opened != Results.OpenWaypointError.None)
+            if (!LokiPoe.InGameState.WorldUi.IsOpened)
             {
-                CommunityLib.Log.ErrorFormat("[TakeWaypoint] Fail to open waypoint. Error: \"{0}\".", opened);
-                return LokiPoe.InGameState.TakeWaypointResult.WaypointControlNotVisible;
+                var opened = await LibCoroutines.OpenWaypoint();
+                if (opened != Results.OpenWaypointError.None)
+                {
+                    CommunityLib.Log.ErrorFormat("[TakeWaypoint] Fail to open waypoint. Error: \"{0}\".", opened);
+                    return LokiPoe.InGameState.TakeWaypointResult.WaypointControlNotVisible;
+                }
             }
+            if (difficulty == Difficulty.Unknown) difficulty = LokiPoe.CurrentWorldArea.Difficulty;
 
-            var areaId = name == "Hideout" ? "" : GetZoneId(difficulty.ToString(), name);
-            //var areaId = LokiPoe.GetZoneId(difficulty.ToString(), name);
-
-            CommunityLib.Log.InfoFormat($"[TakeWaypoint] Going to {name} at {difficulty}. AreaID {areaId}");
+            //var areaId = name == "Hideout" ? "" : GetZoneId(difficulty.ToString(), name);
+            CommunityLib.Log.InfoFormat($"[TakeWaypoint] Going to {name} at {difficulty}.");
 
             var areaHash = LokiPoe.LocalData.AreaHash;
-            var taken = name == "Hideout"
-                ? LokiPoe.InGameState.WorldUi.GoToHideout()
-                : LokiPoe.InGameState.WorldUi.TakeWaypoint(areaId, newInstance, Int32.MaxValue);
+            var taken = name.Equals("Hideout", StringComparison.OrdinalIgnoreCase) 
+                ? LokiPoe.InGameState.WorldUi.GoToHideout() 
+                : LokiPoe.InGameState.WorldUi.TakeWaypoint(GetZoneId(difficulty.ToString(), name), newInstance, Int32.MaxValue);
 
             if (taken != LokiPoe.InGameState.TakeWaypointResult.None)
             {
