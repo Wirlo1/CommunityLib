@@ -194,7 +194,9 @@ namespace CommunityLib
                         );
             }
 
-            await Coroutines.LatencyWait(2);
+            //Await here is not wanted if we'll want to make fast re-caching the updated stash
+            //It's only re-caching, not item usage so no need to use it.
+            //await Coroutines.LatencyWait(2);
             return true;
         }
     }
