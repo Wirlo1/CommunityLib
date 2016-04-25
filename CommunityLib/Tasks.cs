@@ -6,7 +6,7 @@ namespace CommunityLib
 {
     public static class Tasks
     {
-        public static readonly TaskManager CurrentTaskManager = Communication.GetCurrentBotTaskManager();
+        public static TaskManager CurrentTaskManager => Communication.GetCurrentBotTaskManager();
 
         public enum AddType
         {

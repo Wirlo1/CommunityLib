@@ -109,9 +109,9 @@ namespace CommunityLib
 
                 //User have no hideout
                 //TODO: Fix diz (NoHideout message not in enum)
-                //var noHideoutMessage = Chat.GetNewChatMessages().Any( d => d.Message.Contains(Dat.LookupBackendError(BackendErrorEnum.NoHideout).Text) );
+                //var noHideoutMessage = Chat.GetNewChatMessages().Any(d => d.Message.Contains(Dat.LookupBackendError(BackendErrorEnum.NoHideout).Text));
                 //if (noHideoutMessage)
-                //    return Results.FastGoToHideoutResult.NoHideout;
+                //  return Results.FastGoToHideoutResult.NoHideout;
 
                 // If it exists, and the timer has reached the random lapse we calculated above,
                 if (nextTimer.ElapsedMilliseconds > nextTry)
