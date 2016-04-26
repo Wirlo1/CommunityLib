@@ -105,13 +105,13 @@ namespace CommunityLib
                 if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPublic)
                 {
                     CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
-                    continue;
+                    goto NextTab;
                 }
 
                 if (LokiPoe.InGameState.StashUi.StashTabInfo.IsRemoveOnly)
                 {
                     CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
-                    continue;
+                    goto NextTab;
                 }
 
                 //Different handling for currency tabs
@@ -133,6 +133,7 @@ namespace CommunityLib
                             );
                 }
 
+                NextTab:
                 if (LokiPoe.InGameState.StashUi.TabControl.CurrentTabName == LokiPoe.InGameState.StashUi.TabControl.TabNames.Last())
                 {
                     CommunityLib.Log.DebugFormat("[CommunityLib][UpdateItemsInStash] We're on the last tab: \"{0}\". Finishing.", 
