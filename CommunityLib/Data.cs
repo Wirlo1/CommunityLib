@@ -76,6 +76,9 @@ namespace CommunityLib
             if (ItemsInStashAlreadyCached && !force)
                 return true;
 
+            if (CommunityLibSettings.Instance.CacheTabsCollection.Any())
+                return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection);
+
             // If stash isn't opened, abort this and return
             if (!await Stash.OpenStashTabTask())
                 return false;
@@ -97,6 +100,18 @@ namespace CommunityLib
                 {
                     CommunityLib.Log.InfoFormat("[CommunityLib][UpdateItemsInStash] Stash not opened? Trying again.");
                     return await UpdateItemsInStash(force);
+                }
+
+                if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPublic)
+                {
+                    CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
+                    continue;
+                }
+
+                if (LokiPoe.InGameState.StashUi.StashTabInfo.IsRemoveOnly)
+                {
+                    CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
+                    continue;
                 }
 
                 //Different handling for currency tabs
@@ -145,6 +160,25 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// Overload for UpdateItemsInStash, taking a list of tabs as parameters
+        /// </summary>
+        /// <param name="tabs"></param>
+        /// <returns></returns>
+        private static async Task<bool> UpdateItemsInStash(ObservableCollection<CommunityLibSettings.StringEntry> tabs)
+        {
+            foreach (var tab in tabs)
+            {
+                if (await UpdateSpecificTab(tab.Name)) continue;
+                CommunityLib.Log.ErrorFormat($"[CommunityLib][UpdateSpecificTab (specific)] An error happend when caching the tab \"{tab.Name}\"");
+                return false;
+            }
+
+            ItemsInStashAlreadyCached = true;
+            await Coroutines.LatencyWait();
+            return true;
+        }
+
+        /// <summary>
         /// Forces the update of a specific tab
         /// It first removes the items that were in this one last check
         /// Then just reparse the whole tab
@@ -160,10 +194,6 @@ namespace CommunityLib
             if (!await Stash.OpenStashTabTask(tabName))
                 return false;
 
-            // Stash should be open, processing cached data in this tab
-            // First remove every item in that one
-            CachedItemsInStash.RemoveAll(i => i.TabName.Equals(tabName));
-
             // Then process the tab
             if (!LokiPoe.IsInGame)
             {
@@ -177,6 +207,23 @@ namespace CommunityLib
                 CommunityLib.Log.InfoFormat("[CommunityLib][UpdateSpecificTab] Stash not opened... returning false");
                 return false;
             }
+
+            // Handling of Public & RemoveOnly tabs for caching (we don't want to cache diz
+            if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPublic)
+            {
+                CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
+                return false;
+            }
+
+            if (LokiPoe.InGameState.StashUi.StashTabInfo.IsRemoveOnly)
+            {
+                CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
+                return false;
+            }
+
+            // Stash should be open, processing cached data in this tab
+            // First remove every item in that one
+            CachedItemsInStash.RemoveAll(i => i.TabName.Equals(tabName));
 
             if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumCurrency)
             {

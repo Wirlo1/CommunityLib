@@ -15,6 +15,8 @@ namespace CommunityLib
 {
     public class CommunityLib : IPlugin
     {
+        private CommunityLibGUI _gui;
+
         #region Delegates
 
         /// <summary>
@@ -60,7 +62,7 @@ namespace CommunityLib
         public string Name => "CommunityLib";
         public string Author => "Community ! ofc";
         public string Description => "Acts as a \"Database\" of generic functions you can use in any plugins";
-        public string Version => "0.0.0.1";
+        public string Version => "0.0.0.2";
 
         #endregion
 
@@ -101,8 +103,8 @@ namespace CommunityLib
 
         #region Implementation of IConfigurable
 
-        public UserControl Control => null;
-        public JsonSettings Settings => null;
+        public UserControl Control => _gui ?? new CommunityLibGUI();
+        public JsonSettings Settings => CommunityLibSettings.Instance;
 
         #endregion
 
