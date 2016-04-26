@@ -76,6 +76,9 @@ namespace CommunityLib
             if (ItemsInStashAlreadyCached && !force)
                 return true;
 
+            if (CommunityLibSettings.Instance.CacheTabsCollection.Any())
+                return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection);
+
             // If stash isn't opened, abort this and return
             if (!await Stash.OpenStashTabTask())
                 return false;
@@ -141,6 +144,25 @@ namespace CommunityLib
             }
 
             ItemsInStashAlreadyCached = true;
+            return true;
+        }
+
+        /// <summary>
+        /// Overload for UpdateItemsInStash, taking a list of tabs as parameters
+        /// </summary>
+        /// <param name="tabs"></param>
+        /// <returns></returns>
+        private static async Task<bool> UpdateItemsInStash(ObservableCollection<CommunityLibSettings.StringEntry> tabs)
+        {
+            foreach (var tab in tabs)
+            {
+                if (await UpdateSpecificTab(tab.Name)) continue;
+                CommunityLib.Log.ErrorFormat($"[CommunityLib][UpdateSpecificTab (specific)] An error happend when caching the tab \"{tab.Name}\"");
+                return false;
+            }
+
+            ItemsInStashAlreadyCached = true;
+            await Coroutines.LatencyWait();
             return true;
         }
 
