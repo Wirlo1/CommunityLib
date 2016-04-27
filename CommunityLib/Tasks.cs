@@ -29,7 +29,7 @@ namespace CommunityLib
             if (namesToCheck.Any(name => AddTask(task, name, type, false)))
                 return true;
 
-            CommunityLib.Log.ErrorFormat("[Task] Fail to add \"{0}\".", task.Name);
+            CommunityLib.Log.ErrorFormat($"[Task](Array) Failed to add \"{task.Name}\".");
             if (stoponerror)
                 BotManager.Stop();
             return false;
@@ -37,6 +37,8 @@ namespace CommunityLib
 
         public static bool AddTask(ITask task, string name, AddType type, bool stoponerror = true)
         {
+            CommunityLib.Log.DebugFormat($"[Task](Single) Adding task \"{task.Name}\".");
+
             bool added = false;
             switch (type)
             {
@@ -55,13 +57,16 @@ namespace CommunityLib
             }
             if (!added)
             {
-                CommunityLib.Log.ErrorFormat("[TaskHelpers] Fail to add \"{0}\".", task.Name);
                 if (stoponerror)
+                {
+                    CommunityLib.Log.ErrorFormat("[TaskHelpers](Single) Failed to add \"{0}\".", task.Name);
                     BotManager.Stop();
+                }
 
                 return false;
             }
 
+            CommunityLib.Log.DebugFormat($"[Task](Single) Task \"{task.Name}\" added succesfully.");
             return true;
         }
 
@@ -71,7 +76,7 @@ namespace CommunityLib
             {
                 if (stoponerror)
                 {
-                    CommunityLib.Log.ErrorFormat("[TaskHelpers] Fail to remove \"{0}\".", name);
+                    CommunityLib.Log.ErrorFormat("[TaskHelpers] Failed to remove \"{0}\".", name);
                     BotManager.Stop();
                 }
             }

@@ -64,12 +64,15 @@ namespace CommunityLib
 
             if (npcName == "")
             {
-                CommunityLib.Log.ErrorFormat("[{0}] TownNpcName returned an empty string.", "OpenNpcSellPanel");
+                CommunityLib.Log.ErrorFormat("[CommunityLib][OpenNpcSellPanel] TownNpcName returned an empty string.");
                 return false;
             }
 
             if (!await TalkToNpc(npcName))
+            {
+                CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcSellPanel] Failed to talk to {npcName}");
                 return false;
+            }
 
             var isSellDialogOpen = LokiPoe.InGameState.NpcDialogUi.SellItems();
             await WaitForPanel(PanelType.Sell);
@@ -105,7 +108,9 @@ namespace CommunityLib
 
             // Wait for the window to appear
             var ret = await WaitForPanel(PanelType.NpcDialog);
-            await Coroutine.Sleep(500);
+            await Coroutine.Sleep(300);
+            await Coroutines.LatencyWait();
+            await Coroutines.ReactionWait();
 
             return ret;
         }

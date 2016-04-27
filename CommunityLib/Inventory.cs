@@ -256,11 +256,18 @@ namespace CommunityLib
 
             // We assume it's currency stash tab, do not use LocalId with it
             if (onCursor == UseItemResult.Unsupported)
+            {
+                CommunityLib.Log.DebugFormat($"[CommunityLib] Failed to use item on item. Unsupported");
                 onCursor = sourceWrapper.UseItem();
+
+            }
 
             // If something else than None is returned, the item can't be put on cursor properly
             if (onCursor != UseItemResult.None)
+            {
+                CommunityLib.Log.ErrorFormat($"[CommunityLib] Failed to use item on item. OnCursor: {onCursor}. Returning item not found");
                 return ApplyCursorResult.ItemNotFound;
+            }
 
             await Coroutines.LatencyWait();
             await Coroutines.ReactionWait();
@@ -300,10 +307,15 @@ namespace CommunityLib
 
             // End up the item application
             var err2 = InventoryControlWrapper.EndApplyCursor();
+            await Coroutines.FinishCurrentAction();
+            await Coroutines.ReactionWait();
+
             // IF an error is returned, let caller know
             if (err2 != ApplyCursorResult.None)
                 return ApplyCursorResult.ProcessHookManagerNotEnabled;
 
+            if (err != ApplyCursorResult.None)
+                CommunityLib.Log.ErrorFormat($"[CommunityLib] Failed to use item on item. Error: {err}");
             return err;
         }
 
