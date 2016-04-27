@@ -15,6 +15,53 @@ namespace CommunityLib
     public class Stash
     {
         /// <summary>
+        /// Checks if the item will fit in the current stash tab. Only for use with FastMove
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
+        public bool FastMoveCanFitItem(Item item)
+        {
+            int column, row;
+            //We can't go futher if the stash is not opened
+            if (!StashUI.IsOpened || StashUI.StashTabInfo.IsPublic || StashUI.StashTabInfo.IsRemoveOnly)
+                return false;
+            
+            //If it's regular tab then it's rather simple
+            if (!StashUI.StashTabInfo.IsPremiumCurrency)
+                return StashUI.InventoryControl.Inventory.CanFitItem(item, out column, out row);
+
+            //We can only fit stackables in the currency tab
+            if (item.MaxStackCount <= 1)
+                return false;
+
+            var wrps = new List<InventoryControlWrapper>();
+            //Wrapper especially for that one thing
+            var wrapper = StashUI.GetInventoryControlForMetadata(item.Metadata);
+            if (wrapper != null)
+                wrps.Add(wrapper);
+
+            wrps.Add(StashUI.InventoryControl_Misc1);
+            wrps.Add(StashUI.InventoryControl_Misc2);
+            wrps.Add(StashUI.InventoryControl_Misc3);
+            wrps.Add(StashUI.InventoryControl_Misc4);
+            wrps.Add(StashUI.InventoryControl_Misc5);
+
+            foreach (var wrap in wrps)
+            {
+                //There's no item, it's free to use
+                if (wrap.CurrencyTabItem == null)
+                    return true;
+
+                //We can fit in here.
+                var freeSpace = wrap.CurrencyTabItem.MaxCurrencyTabStackCount - wrap.CurrencyTabItem.StackCount;
+                if (freeSpace - item.StackCount >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Return the InventoryControlWrapper for an item and its class
         /// </summary>
         /// <param name="itemName"></param>
