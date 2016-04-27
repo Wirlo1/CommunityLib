@@ -19,7 +19,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="item"></param>
         /// <returns></returns>
-        public bool FastMoveCanFitItem(Item item)
+        public static bool FastMoveCanFitItem(Item item)
         {
             int column, row;
             //We can't go futher if the stash is not opened
@@ -211,6 +211,27 @@ namespace CommunityLib
         public static SwitchToTabResult GoToFirstTab()
         {
             return StashUI.TabControl.SwitchToTabMouse(0);
+        }
+
+        public static async Task<SwitchToTabResult> GoToNextTab( bool guild = false)
+        {
+            var opened = guild ? LokiPoe.InGameState.GuildStashUi.IsOpened : StashUI.IsOpened;
+            if (!opened)
+                return SwitchToTabResult.UiNotOpen;
+
+            var lastTab = guild ? LokiPoe.InGameState.GuildStashUi.TabControl.IsOnLastTab : StashUI.TabControl.IsOnLastTab;
+            if (lastTab)
+                return SwitchToTabResult.NoMoreTabs;
+
+            var currentId = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo.InventoryId : StashUI.StashTabInfo.InventoryId;
+            var err = guild ? LokiPoe.InGameState.GuildStashUi.TabControl.NextTabKeyboard() : StashUI.TabControl.NextTabKeyboard();
+            if (err != SwitchToTabResult.None)
+                return err;
+
+            if (await WaitForStashTabChange(currentId, guild: guild))
+                return SwitchToTabResult.None;
+
+            return SwitchToTabResult.Failed;
         }
 
         /// <summary>
