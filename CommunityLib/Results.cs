@@ -95,5 +95,33 @@
             /// <summary>The world panel did not open.</summary>
             WorldPanelDidNotOpen,
         }
+
+        /// <summary>
+        /// Errors for the TakeWaypointTo coroutine.
+        /// </summary>
+        public enum TakeAreaTransitionError
+        {
+            /// <summary>None, the area transition has been taken to the desired area.</summary>
+            None,
+
+            /// <summary>No area transition object was detected.</summary>
+            NoAreaTransitions,
+
+            /// <summary>Interaction with the area transition failed.</summary>
+            InteractFailed,
+
+            /// <summary>The instance manager panel did not open.</summary>
+            InstanceManagerDidNotOpen,
+
+            /// <summary>The JoinNew function failed with an error.</summary>
+            JoinNewFailed,
+
+            /// <summary>An area change did not happen after taking the area transition.</summary>
+            WaitForAreaChangeFailed,
+
+            /// <summary>Too many instances are listed based on user configuration.</summary>
+            TooManyInstances,
+        }
+
     }
 }

@@ -6,6 +6,7 @@ using System.Windows;
 using Loki.Game;
 using Loki.Game.GameData;
 using Loki.Game.Objects;
+using Loki.Game.Objects.Items;
 
 namespace CommunityLib
 {
@@ -125,6 +126,8 @@ namespace CommunityLib
         public List<string> Tags { get; set; }
         public string Type { get; set; }
 
+        public CachedMap MapValues { get; set; }
+
         private InventoryControlWrapper Wrapper
         {
             get
@@ -234,7 +237,7 @@ namespace CommunityLib
         /// <para>if TabName is empty, it assumes the item is in inventory.</para>
         /// </summary>
         /// <returns>Opened current stash and the item itself</returns>
-        private async Task<Item> GetItem()
+        public async Task<Item> GetItem()
         {
             if (!await GoTo())
                 return null;
@@ -249,10 +252,16 @@ namespace CommunityLib
             if (wrapper == null || item == null)
             {
                 CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
+                RemoveFromCache();
                 return false;
             }
 
-            return await Inventory.FastMove(wrapper, item.LocalId, retries);
+            var res = await Inventory.FastMove(wrapper, item.LocalId, retries);
+
+            //Updating the StackCount now and removing the item if needed
+            await Update();
+
+            return res;
         }
 
         public async Task<ApplyCursorResult> UseOnItem(InventoryControlWrapper destinationWrapper, Item destinationItem,
@@ -263,6 +272,7 @@ namespace CommunityLib
             if (wrapper == null || item == null)
             {
                 CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
+                RemoveFromCache();
                 return ApplyCursorResult.ItemNotFound;
             }
 
@@ -281,6 +291,7 @@ namespace CommunityLib
             if (wrapper == null || item == null)
             {
                 CommunityLib.Log.ErrorFormat("[{0}] Failed to get item or wrapper, item == null: {1}, wrapper == null == {2}", Name, item == null, wrapper == null);
+                RemoveFromCache();
                 return false;
             }
 
@@ -308,14 +319,7 @@ namespace CommunityLib
 
             //Item dissapeared
             if (item == null || delete)
-            {
-                var isHere = Data.CachedItemsInStash.Contains(this);
-                if (isHere)
-                {
-                    CommunityLib.Log.Debug("[CommunityLib][StashCache] An item is being removed from cache");
-                    Data.CachedItemsInStash.Remove(this);
-                } 
-            }
+                RemoveFromCache();
         }
 
         /// <summary>
@@ -452,6 +456,21 @@ namespace CommunityLib
             Tags = new List<string>(item.Tags);
             Type = item.ItemType.ToString().Replace('/', ' ');
             IsDivinationCardType = item.IsDivinationCardType;
+
+            if (item.IsMapType)
+                MapValues = new CachedMap( item as Map );
+            else
+                MapValues = new CachedMap {Tier = 0, Level = 0};
+        }
+
+        private void RemoveFromCache()
+        {
+            var isHere = Data.CachedItemsInStash.Contains(this);
+            if (isHere)
+            {
+                CommunityLib.Log.Debug("[CommunityLib][StashCache] An item is being removed from cache");
+                Data.CachedItemsInStash.Remove(this);
+            }
         }
     }
 
@@ -495,6 +514,21 @@ namespace CommunityLib
                 Min = statContainer.Min;
                 Stat = statContainer.Stat.ToString();
             }
+        }
+    }
+
+    public class CachedMap
+    {
+        public int Tier { get; set; }
+        public int Level { get; set; }
+
+        public CachedMap() { }
+        public CachedMap(Map map) { Update(map); }
+
+        public void Update(Map map)
+        {
+            Tier = map.Tier;
+            Level = map.Level;
         }
     }
 }

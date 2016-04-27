@@ -53,6 +53,7 @@ namespace CommunityLib
         public void Stop()
         {
             Log.DebugFormat("[{0}] Stopped", Name);
+            Data.ItemsInStashAlreadyCached = false;
         }
 
         #endregion

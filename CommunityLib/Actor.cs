@@ -37,7 +37,9 @@ namespace CommunityLib
                 // If in hideout, process NPCs
                 if (LokiPoe.Me.IsInHideout)
                 {
-                    var npcs = LokiPoe.ObjectManager.GetObjectsByType<Npc>().ToList();
+                    var npcs = LokiPoe.ObjectManager.GetObjectsByType<Npc>()
+                        .Where(npc => npc.IsTargetable)
+                        .ToList();
 
                     // If no NPCs are available in hideout, bot will stop for security
                     if (npcs.Count == 0)

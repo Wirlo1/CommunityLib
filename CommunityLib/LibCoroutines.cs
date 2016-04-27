@@ -509,5 +509,181 @@ namespace CommunityLib
 
             return true;
         }
+
+        /// <summary>
+        /// This coroutines waits for the character to change positions from a local area transition.
+        /// </summary>
+        /// <param name="position">The starting position.</param>
+        /// <param name="delta">The change in position required.</param>
+        /// <param name="timeout">How long to wait before the coroutine fails.</param>
+        /// <returns>true on success, and false on failure.</returns>
+        public static async Task<bool> WaitForPositionChange(Vector2i position, int delta = 30, int timeout = 5000)
+        {
+            CommunityLib.Log.DebugFormat("[WaitForPositionChange]");
+
+            var sw = Stopwatch.StartNew();
+
+            while (LokiPoe.MyPosition.Distance(position) < delta)
+            {
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.ErrorFormat("[WaitForLargerPositionChange] Timeout.");
+                    return false;
+                }
+
+                CommunityLib.Log.DebugFormat("[WaitForLargerPositionChange] We have been waiting {0} for an area change.", sw.Elapsed);
+
+                await Coroutines.LatencyWait();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// This coroutine waits for the instance manager to open.
+        /// </summary>
+        /// <param name="timeout">How long to wait before the coroutine fails.</param>
+        /// <returns>true on succes and false on failure.</returns>
+        public static async Task<bool> WaitForInstanceManager(int timeout = 1000)
+        {
+            CommunityLib.Log.DebugFormat("[WaitForInstanceManager]");
+
+            var sw = Stopwatch.StartNew();
+
+            while (!LokiPoe.InGameState.InstanceManagerUi.IsOpened)
+            {
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.ErrorFormat("[WaitForInstanceManager] Timeout.");
+                    return false;
+                }
+
+                CommunityLib.Log.DebugFormat("[WaitForInstanceManager] We have been waiting {0} for the instance manager to open.",
+                    sw.Elapsed);
+
+                await Coroutines.LatencyWait();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// This coroutine waits for an area transition to be usable.
+        /// </summary>
+        /// <param name="name">The name of the area transition.</param>
+        /// <param name="timeout">How long to wait before the coroutine fails.</param>
+        /// <returns>true on succes and false on failure.</returns>
+        public static async Task<bool> WaitForAreaTransition(string name, int timeout = 3000)
+        {
+            CommunityLib.Log.DebugFormat("[WaitForAreaTransition]");
+
+            var sw = Stopwatch.StartNew();
+
+            while (true)
+            {
+                var at = LokiPoe.ObjectManager.GetObjectByName<AreaTransition>(name);
+                if (at != null)
+                {
+                    if (at.IsTargetable)
+                    {
+                        break;
+                    }
+                }
+
+                if (sw.ElapsedMilliseconds > timeout)
+                {
+                    CommunityLib.Log.ErrorFormat("[WaitForAreaTransition] Timeout.");
+                    return false;
+                }
+
+                CommunityLib.Log.DebugFormat(
+                    "[WaitForAreaTransition] We have been waiting {0} for the area transition {1} to be usable.",
+                    sw.Elapsed, name);
+
+                await Coroutines.LatencyWait();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// This coroutine interacts with an area transition in order to change areas. It assumes
+        /// you are in interaction range with the area transition itself. It can be used both in town,
+        /// and out of town, given the previous conditions are met.
+        /// </summary>
+        /// <param name="obj">The area transition object to take.</param>
+        /// <param name="newInstance">Should a new instance be created.</param>
+        /// <param name="isLocal">Is the area transition local? In other words, should the couroutine not wait for an area change.</param>
+        /// <param name="maxInstances">The max number of instance entries allowed to Join a new instance or -1 to not check.</param>
+        /// <returns>A TakeAreaTransitionError that describes the result.</returns>
+        public static async Task<Results.TakeAreaTransitionError> TakeAreaTransition(NetworkObject obj, bool newInstance,
+            int maxInstances,
+            bool isLocal = false)
+        {
+            CommunityLib.Log.InfoFormat("[TakeAreaTransition] {0} {1} {2}", obj.Name, newInstance ? "(new instance)" : "",
+                isLocal ? "(local)" : "");
+
+            await Coroutines.CloseBlockingWindows();
+
+            await Coroutines.FinishCurrentAction();
+
+            var hash = LokiPoe.LocalData.AreaHash;
+            var pos = LokiPoe.MyPosition;
+
+            if (!await InteractWith(obj, newInstance))
+                return Results.TakeAreaTransitionError.InteractFailed;
+
+            if (newInstance)
+            {
+                if (!await WaitForInstanceManager(5000))
+                {
+                    LokiPoe.ProcessHookManager.ClearAllKeyStates();
+
+                    return Results.TakeAreaTransitionError.InstanceManagerDidNotOpen;
+                }
+
+                LokiPoe.ProcessHookManager.ClearAllKeyStates();
+
+                await Coroutines.LatencyWait();
+
+                await Coroutine.Sleep(1000); // Let the gui stay open a bit before clicking too fast.
+
+                if (LokiPoe.InGameState.InstanceManagerUi.InstanceCount >= maxInstances)
+                {
+                    return Results.TakeAreaTransitionError.TooManyInstances;
+                }
+
+                var nierr = LokiPoe.InGameState.InstanceManagerUi.JoinNewInstance();
+                if (nierr != LokiPoe.InGameState.JoinInstanceResult.None)
+                {
+                    CommunityLib.Log.ErrorFormat("[TakeAreaTransition] InstanceManagerUi.JoinNew returned {0}.", nierr);
+                    return Results.TakeAreaTransitionError.JoinNewFailed;
+                }
+
+                // Wait for the action to take place first.
+                await Coroutines.LatencyWait();
+
+                await Coroutines.ReactionWait();
+            }
+
+            if (isLocal)
+            {
+                if (!await WaitForPositionChange(pos))
+                {
+                    CommunityLib.Log.ErrorFormat("[TakeAreaTransition] WaitForPositionChange failed.");
+                    return Results.TakeAreaTransitionError.WaitForAreaChangeFailed;
+                }
+            }
+            else
+            {
+                if (!await Areas.WaitForAreaChange(hash))
+                {
+                    CommunityLib.Log.ErrorFormat("[TakeAreaTransition] WaitForAreaChange failed.");
+                    return Results.TakeAreaTransitionError.WaitForAreaChangeFailed;
+                }
+            }
+
+            return Results.TakeAreaTransitionError.None;
+        }
     }
 }
