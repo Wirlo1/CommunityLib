@@ -8,6 +8,7 @@ using Loki.Bot;
 using Loki.Common;
 using Loki.Game;
 using Loki.Game.Objects;
+using GuildStashUI = Loki.Game.LokiPoe.InGameState.GuildStashUi;
 using StashUI = Loki.Game.LokiPoe.InGameState.StashUi;
 
 namespace CommunityLib
@@ -18,17 +19,26 @@ namespace CommunityLib
         /// Checks if the item will fit in the current stash tab. Only for use with FastMove
         /// </summary>
         /// <param name="item"></param>
+        /// <param name="guild"></param>
         /// <returns></returns>
-        public static bool FastMoveCanFitItem(Item item)
+        public static bool FastMoveCanFitItem(Item item, bool guild = false)
         {
-            int column, row;
             //We can't go futher if the stash is not opened
-            if (!StashUI.IsOpened || StashUI.StashTabInfo.IsPublic || StashUI.StashTabInfo.IsRemoveOnly)
+            var canGo = guild
+                ? !GuildStashUI.IsOpened || GuildStashUI.StashTabInfo.IsPublic || GuildStashUI.StashTabInfo.IsRemoveOnly
+                : !StashUI.IsOpened || StashUI.StashTabInfo.IsPublic || StashUI.StashTabInfo.IsRemoveOnly;
+
+            if (canGo)
                 return false;
-            
+
             //If it's regular tab then it's rather simple
-            if (!StashUI.StashTabInfo.IsPremiumCurrency)
-                return StashUI.InventoryControl.Inventory.CanFitItem(item, out column, out row);
+            if (guild || !StashUI.StashTabInfo.IsPremiumCurrency)
+            {
+                int column, row;
+                return guild
+                ? GuildStashUI.InventoryControl.Inventory.CanFitItem(item, out column, out row)
+                : StashUI.InventoryControl.Inventory.CanFitItem(item, out column, out row);
+            }
 
             //We can only fit stackables in the currency tab
             if (item.MaxStackCount <= 1)
@@ -36,15 +46,11 @@ namespace CommunityLib
 
             var wrps = new List<InventoryControlWrapper>();
             //Wrapper especially for that one thing
-            var wrapper = StashUI.GetInventoryControlForMetadata(item.Metadata);
+            var wrapper = StashUI.GetInventoryControlForMetadata(item.Metadata, false);
             if (wrapper != null)
                 wrps.Add(wrapper);
 
-            wrps.Add(StashUI.InventoryControl_Misc1);
-            wrps.Add(StashUI.InventoryControl_Misc2);
-            wrps.Add(StashUI.InventoryControl_Misc3);
-            wrps.Add(StashUI.InventoryControl_Misc4);
-            wrps.Add(StashUI.InventoryControl_Misc5);
+            StashUI.CurrencyTabInventoryControlsMisc.ForEach( w => wrps.Add(w));
 
             foreach (var wrap in wrps)
             {
