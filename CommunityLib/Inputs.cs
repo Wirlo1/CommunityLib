@@ -85,32 +85,32 @@ namespace CommunityLib
             return Results.ClearCursorResults.None;
         }
 
-        public static async Task<bool> WaitForCursorToBeEmpty(int timeout = 10000)
+        public static async Task<bool> WaitForCursorToBeEmpty(int timeout = 5000)
         {
             var sw = Stopwatch.StartNew();
             while (LokiPoe.InstanceInfo.GetPlayerInventoryItemsBySlot(InventorySlot.Cursor).Any())
             {
-                CommunityLib.Log.InfoFormat("[WaitForCursorToBeEmpty] Waiting for the cursor to be empty.");
+                CommunityLib.Log.InfoFormat("[CommunityLib][WaitForCursorToBeEmpty] Waiting for the cursor to be empty.");
                 await Coroutines.LatencyWait();
                 if (sw.ElapsedMilliseconds > timeout)
                 {
-                    CommunityLib.Log.InfoFormat("[WaitForCursorToBeEmpty] Timeout while waiting for the cursor to become empty.");
+                    CommunityLib.Log.InfoFormat("[CommunityLib][WaitForCursorToBeEmpty] Timeout while waiting for the cursor to become empty.");
                     return false;
                 }
             }
             return true;
         }
 
-        public static async Task<bool> WaitForCursorToHaveItem(int timeout = 10000)
+        public static async Task<bool> WaitForCursorToHaveItem(int timeout = 5000)
         {
             var sw = Stopwatch.StartNew();
             while (!LokiPoe.InstanceInfo.GetPlayerInventoryItemsBySlot(InventorySlot.Cursor).Any())
             {
-                CommunityLib.Log.InfoFormat("[WaitForCursorToHaveItem] Waiting for the cursor to have an item.");
+                CommunityLib.Log.InfoFormat("[CommunityLib][WaitForCursorToHaveItem] Waiting for the cursor to have an item.");
                 await Coroutines.LatencyWait();
                 if (sw.ElapsedMilliseconds > timeout)
                 {
-                    CommunityLib.Log.InfoFormat("[WaitForCursorToHaveItem] Timeout while waiting for the cursor to contain an item.");
+                    CommunityLib.Log.InfoFormat("[CommunityLib][WaitForCursorToHaveItem] Timeout while waiting for the cursor to contain an item.");
                     return false;
                 }
             }
