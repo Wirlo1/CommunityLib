@@ -397,7 +397,7 @@ namespace CommunityLib
             }
 
             var pos = ExilePather.FastWalkablePositionFor(portal);
-            CommunityLib.Log.DebugFormat($"[TakeClosestPortal] The portal was found at {pos}.");
+            CommunityLib.Log.Debug($"[TakeClosestPortal] The portal was found at {pos}.");
 
             if (!await Navigation.MoveToLocation(pos, 5, 10000, () => false))
                 return false;
@@ -409,13 +409,13 @@ namespace CommunityLib
             {
                 await Coroutines.FinishCurrentAction();
 
-                CommunityLib.Log.DebugFormat($"[TakeClosestPortal] The portal to interact with is {portal.Id} at {pos}.");
+                CommunityLib.Log.Debug($"[TakeClosestPortal] The portal to interact with is {portal.Id} at {pos}.");
 
                 if (await InteractWith(portal))
                 {
                     if (await Areas.WaitForAreaChange(hash))
                     {
-                        CommunityLib.Log.DebugFormat("[TakeClosestPortal] The portal has been taken.");
+                        CommunityLib.Log.Debug("[TakeClosestPortal] The portal has been taken.");
                         return true;
                     }
                 }

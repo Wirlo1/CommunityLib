@@ -307,8 +307,7 @@ namespace CommunityLib
 
             // End up the item application
             var err2 = InventoryControlWrapper.EndApplyCursor();
-            await Coroutines.FinishCurrentAction();
-            await Coroutines.ReactionWait();
+            await Coroutine.Yield();
 
             // IF an error is returned, let caller know
             if (err2 != ApplyCursorResult.None)
@@ -316,6 +315,7 @@ namespace CommunityLib
 
             if (err != ApplyCursorResult.None)
                 CommunityLib.Log.ErrorFormat($"[CommunityLib] Failed to use item on item. Error: {err}");
+
             return err;
         }
 
