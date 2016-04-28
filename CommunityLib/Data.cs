@@ -76,7 +76,7 @@ namespace CommunityLib
             if (ItemsInStashAlreadyCached && !force)
                 return true;
 
-            if (CommunityLibSettings.Instance.CacheTabsCollection.Any( d => string.IsNullOrEmpty(d.Name) ))
+            if (CommunityLibSettings.Instance.CacheTabsCollection.Any( d => !string.IsNullOrEmpty(d.Name) ))
                 return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection);
 
             // If stash isn't opened, abort this and return
