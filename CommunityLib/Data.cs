@@ -77,7 +77,7 @@ namespace CommunityLib
                 return true;
 
             if (CommunityLibSettings.Instance.CacheTabsCollection.Any( d => !string.IsNullOrEmpty(d.Name) ))
-                return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection);
+                return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection.Where( d => !string.IsNullOrEmpty(d.Name)) );
 
             // If stash isn't opened, abort this and return
             if (!await Stash.OpenStashTabTask())
@@ -165,7 +165,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="tabs"></param>
         /// <returns></returns>
-        private static async Task<bool> UpdateItemsInStash(ObservableCollection<CommunityLibSettings.StringEntry> tabs)
+        private static async Task<bool> UpdateItemsInStash(IEnumerable<CommunityLibSettings.StringEntry> tabs)
         {
             foreach (var tab in tabs)
             {
