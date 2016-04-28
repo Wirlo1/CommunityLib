@@ -50,7 +50,7 @@ namespace CommunityLib
             if (wrapper != null)
                 wrps.Add(wrapper);
 
-            StashUI.CurrencyTabInventoryControlsMisc.ForEach( w => wrps.Add(w));
+            StashUI.CurrencyTabInventoryControlsMisc.ForEach(w => wrps.Add(w));
 
             foreach (var wrap in wrps)
             {
@@ -116,6 +116,11 @@ namespace CommunityLib
             return FindItemsInStashTab(d => d.FullName.Equals(itemName));
         }
 
+        /// <summary>
+        /// Find items in a stash tab matching a condition
+        /// </summary>
+        /// <param name="condition">Condition to pass item through</param>
+        /// <returns>List of CachedItemObjects</returns>
         public static List<CachedItemObject> FindItemsInStashTab(CommunityLib.FindItemDelegate condition)
         {
             var ret = new List<CachedItemObject>();
@@ -219,7 +224,12 @@ namespace CommunityLib
             return StashUI.TabControl.SwitchToTabMouse(0);
         }
 
-        public static async Task<SwitchToTabResult> GoToNextTab( bool guild = false)
+        /// <summary>
+        /// This coroutines handle the whole NextTab behavior, including waiting for tab change
+        /// </summary>
+        /// <param name="guild">Guild stash or not ?</param>
+        /// <returns>SwitchToTab result enum entry</returns>
+        public static async Task<SwitchToTabResult> GoToNextTab(bool guild = false)
         {
             var opened = guild ? LokiPoe.InGameState.GuildStashUi.IsOpened : StashUI.IsOpened;
             if (!opened)

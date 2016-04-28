@@ -107,6 +107,8 @@ namespace CommunityLib
             return LokiPoe.InGameState.InventoryUi.InventoryControl_Main.Inventory.Items.Where(d => condition(d)).ToList();
         }
 
+
+
         /// <summary>
         /// Generic FastMove using new Inv Wrapper
         /// The inventory you refer is theinventory that will be used for moving the item from
@@ -252,30 +254,49 @@ namespace CommunityLib
             if (destinationItem == null)
                 throw new ArgumentNullException(nameof(destinationItem));
 
+            // If the item is not modifiable, prevent the logic to be executed
+            if (destinationItem.IsCorrupted || destinationItem.IsMirrored)
+            {
+                CommunityLib.Log.DebugFormat("[CommunityLib] We can\'t alter the item (Corrupted/Mirrored). UnsupportedItem");
+                return ApplyCursorResult.UnsupportedItem;
+            }
+
+            if (destinationItem.HasSkillGemsEquipped && sourceItem.FullName == "Jeweller's Orb")
+            {
+                CommunityLib.Log.DebugFormat("[CommunityLib] We can't change sockets on the item (Has skill gems in it). UnsupportedItem");
+                return ApplyCursorResult.UnsupportedItem;
+            }
+
             var onCursor = sourceWrapper.UseItem(sourceItem.LocalId);
 
             // We assume it's currency stash tab, do not use LocalId with it
             if (onCursor == UseItemResult.Unsupported)
             {
-                CommunityLib.Log.DebugFormat($"[CommunityLib] Failed to use item on item. Unsupported");
+                CommunityLib.Log.DebugFormat("[CommunityLib] Failed to use item on item. Unsupported");
                 onCursor = sourceWrapper.UseItem();
-
             }
+
+            await Coroutines.LatencyWait();
 
             // If something else than None is returned, the item can't be put on cursor properly
             if (onCursor != UseItemResult.None)
             {
-                CommunityLib.Log.ErrorFormat($"[CommunityLib] Failed to use item on item. OnCursor: {onCursor}. Returning item not found");
-                return ApplyCursorResult.ItemNotFound;
+                if (!await Inputs.WaitForCursorToHaveItem())
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib] Failed to use item on item. OnCursor: {onCursor}. Returning item not found");
+                    return ApplyCursorResult.ItemNotFound;
+                }
             }
 
             await Coroutines.LatencyWait();
-            await Coroutines.ReactionWait();
 
             // First, we put the item on cursor to start applying
             var err = InventoryControlWrapper.BeginApplyCursor(true);
             if (err != ApplyCursorResult.None)
+            {
+                CommunityLib.Log.Error($"[CommunityLib] Error returned for BeginApplyCursor : {err}");
                 return ApplyCursorResult.ProcessHookManagerNotEnabled;
+            }
 
             // We store the destination item's location to make sure it has been applied or the delegate (lower in the code) is valid
             var itemLocation = destinationItem.LocationTopLeft;
@@ -283,14 +304,20 @@ namespace CommunityLib
 
             while (true)
             {
+                var initialId = destinationItem.LocalId;
+
                 // Apply item on cursor to the destination item
                 err = destinationWrapper.ApplyCursorTo(destinationItem.LocalId);
                 // If the error is different of None, break the execution and return the error
                 if (err != ApplyCursorResult.None)
                     break;
 
+                // Check if the item has been modified on memory-side
+                if (!await WaitForItemToChange(destinationWrapper, initialId))
+                    break;
+
                 await Coroutines.LatencyWait();
-                await Coroutines.ReactionWait();
+                //await Coroutines.ReactionWait();
 
                 // If the delegate is null, that means our processing is done, break the loop to return None
                 if (d == null)
@@ -308,19 +335,35 @@ namespace CommunityLib
             // End up the item application
             var err2 = InventoryControlWrapper.EndApplyCursor();
             await Coroutine.Yield();
+            await Inputs.WaitForCursorToBeEmpty();
 
             // IF an error is returned, let caller know
             if (err2 != ApplyCursorResult.None)
+            {
+                CommunityLib.Log.Error($"[CommunityLib] Error returned for EndApplyCursor : {err2}");
                 return ApplyCursorResult.ProcessHookManagerNotEnabled;
+            }
 
             if (err != ApplyCursorResult.None)
                 CommunityLib.Log.ErrorFormat($"[CommunityLib] Failed to use item on item. Error: {err}");
-
             return err;
         }
 
+        /// <summary>
+        /// Split an item from a source wrapper into main inventory
+        /// </summary>
+        /// <param name="wrapper">Source wrapper, where the item belongs</param>
+        /// <param name="item">Item that is meant to be splitten up</param>
+        /// <param name="pickupAmount">Amount to be placed in main, if this is superior to the stack count, it gets fastmoved instead</param>
+        /// <returns> true if everything went well</returns>
         public static async Task<bool> SplitAndPlaceItemInMainInventory(InventoryControlWrapper wrapper, Item item, int pickupAmount)
         {
+            // If Any of these args are null, throw an application-level exception
+            if (wrapper == null)
+                throw new ArgumentNullException(nameof(wrapper));
+            if (item == null)
+                throw new ArgumentNullException(nameof(item));
+
             CommunityLib.Log.DebugFormat("[SplitAndPlaceItemInMainInventory] Spliting up stacks. Getting {0} {1}. Count in stack: {2}", pickupAmount, item.FullName, item.StackCount);
 
             if (pickupAmount >= item.StackCount)
@@ -341,6 +384,28 @@ namespace CommunityLib
             await Coroutines.ReactionWait();
 
             await Inputs.ClearCursorTask();
+
+            return true;
+        }
+
+        /// <summary>
+        /// This coroutine waits for an item to be fully altered and available
+        /// </summary>
+        /// <param name="wrapper">Wrapper to retrieve item from</param>
+        /// <param name="itemId">Initial id of the item to check</param>
+        /// <param name="timeout"></param>
+        /// <returns>True if item is null before timeout, else false</returns>
+        public static async Task<bool> WaitForItemToChange(InventoryControlWrapper wrapper, int itemId, int timeout = 2000)
+        {
+            var sw = Stopwatch.StartNew();
+            var item = wrapper.Inventory.GetItemById(itemId);
+            while (item != null)
+            {
+                await Coroutine.Yield();
+                item = wrapper.Inventory.GetItemById(itemId);
+                if (sw.ElapsedMilliseconds > timeout)
+                    return false;
+            }
 
             return true;
         }
