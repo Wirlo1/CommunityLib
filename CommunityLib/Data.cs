@@ -76,7 +76,7 @@ namespace CommunityLib
             if (ItemsInStashAlreadyCached && !force)
                 return true;
 
-            if (CommunityLibSettings.Instance.CacheTabsCollection.Any())
+            if (CommunityLibSettings.Instance.CacheTabsCollection.Any( d => string.IsNullOrEmpty(d.Name) ))
                 return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection);
 
             // If stash isn't opened, abort this and return
@@ -169,6 +169,8 @@ namespace CommunityLib
         {
             foreach (var tab in tabs)
             {
+                //Dont process tabs with wrong name
+                if (string.IsNullOrEmpty(tab.Name)) continue;
                 if (await UpdateSpecificTab(tab.Name)) continue;
                 CommunityLib.Log.ErrorFormat($"[CommunityLib][UpdateSpecificTab (specific)] An error happend when caching the tab \"{tab.Name}\"");
                 return false;
