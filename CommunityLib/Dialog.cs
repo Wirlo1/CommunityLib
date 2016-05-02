@@ -95,7 +95,7 @@ namespace CommunityLib
         /// <returns>boolean</returns>
         public static async Task<bool> TalkToNpc(string npcName)
         {
-            await Coroutines.CloseBlockingWindows();
+            //await Coroutines.CloseBlockingWindows();
             await LibCoroutines.TalkToNpc(npcName);
 
             // Clicking continue if NPC is blablaing (xD)

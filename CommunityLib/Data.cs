@@ -76,8 +76,12 @@ namespace CommunityLib
             if (ItemsInStashAlreadyCached && !force)
                 return true;
 
-            if (CommunityLibSettings.Instance.CacheTabsCollection.Any( d => !string.IsNullOrEmpty(d.Name) ))
-                return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection.Where( d => !string.IsNullOrEmpty(d.Name)) );
+            if (CommunityLibSettings.Instance.CacheTabsCollection.Any(d => !string.IsNullOrEmpty(d.Name)))
+            {
+                var joined = string.Join(", ", CommunityLibSettings.Instance.CacheTabsCollection.Select(d => d.Name));
+                CommunityLib.Log.Debug($"[CommunityLib][UpdateItemsInStash] Tabs to cache: {joined}");
+                return await UpdateItemsInStash(CommunityLibSettings.Instance.CacheTabsCollection.Where(d => !string.IsNullOrEmpty(d.Name)));
+            }
 
             // If stash isn't opened, abort this and return
             if (!await Stash.OpenStashTabTask())
@@ -104,13 +108,13 @@ namespace CommunityLib
 
                 if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPublic)
                 {
-                    CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
+                    CommunityLib.Log.Info($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
                     goto NextTab;
                 }
 
                 if (LokiPoe.InGameState.StashUi.StashTabInfo.IsRemoveOnly)
                 {
-                    CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
+                    CommunityLib.Log.Info($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
                     goto NextTab;
                 }
 
@@ -131,7 +135,9 @@ namespace CommunityLib
                             new CachedItemObject(LokiPoe.InGameState.StashUi.InventoryControl, item,
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                             );
+
                 }
+                CommunityLib.Log.Debug("[CommunityLib][UpdateItemsInStash] Parsed items in the stash tab.");
 
                 NextTab:
                 if (LokiPoe.InGameState.StashUi.TabControl.CurrentTabName == LokiPoe.InGameState.StashUi.TabControl.TabNames.Last())
@@ -167,12 +173,10 @@ namespace CommunityLib
         /// <returns></returns>
         private static async Task<bool> UpdateItemsInStash(IEnumerable<CommunityLibSettings.StringEntry> tabs)
         {
-            foreach (var tab in tabs)
+            foreach (var tab in tabs.Select(d => d.Name).Where(tab => !string.IsNullOrEmpty(tab)))
             {
-                //Dont process tabs with wrong name
-                if (string.IsNullOrEmpty(tab.Name)) continue;
-                if (await UpdateSpecificTab(tab.Name)) continue;
-                CommunityLib.Log.ErrorFormat($"[CommunityLib][UpdateSpecificTab (specific)] An error happend when caching the tab \"{tab.Name}\"");
+                if (await UpdateSpecificTab(tab)) continue;
+                CommunityLib.Log.ErrorFormat($"[CommunityLib][UpdateItemsInStash (specific)] An error happend when caching the tab \"{tab}\"");
                 return false;
             }
 
@@ -214,13 +218,13 @@ namespace CommunityLib
             // Handling of Public & RemoveOnly tabs for caching (we don't want to cache diz
             if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPublic)
             {
-                CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
+                CommunityLib.Log.Error($"[CommunityLib][UpdateSpecificTab] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Public and is not gonna be cached");
                 return false;
             }
 
             if (LokiPoe.InGameState.StashUi.StashTabInfo.IsRemoveOnly)
             {
-                CommunityLib.Log.Error($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
+                CommunityLib.Log.Error($"[CommunityLib][UpdateSpecificTab] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
                 return false;
             }
 

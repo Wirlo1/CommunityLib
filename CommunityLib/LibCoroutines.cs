@@ -210,8 +210,10 @@ namespace CommunityLib
         /// the npc must be in spawn range, otherwise the coroutine will fail. The movement is done without returning,
         /// so this should be carefully used when not in town.
         /// </summary>
+        /// <param name="name">Name of the NPC to interact with</param>
+        /// <param name="skipTalk">Should the bot skip all the dialog NPC's have before the dialog panel appears"</param>
         /// <returns>An OpenStashError that describes the result.</returns>
-        public static async Task<Results.TalkToNpcError> TalkToNpc(string name)
+        public static async Task<Results.TalkToNpcError> TalkToNpc(string name, bool skipTalk = true)
         {
             await Coroutines.CloseBlockingWindows();
 
@@ -247,6 +249,14 @@ namespace CommunityLib
 
             if (!await InteractWith(npc))
                 return Results.TalkToNpcError.InteractFailed;
+
+            // Clicking continue if NPC is blablaing (xD)
+            while (skipTalk && LokiPoe.InGameState.NpcDialogUi.DialogDepth == 2)
+            {
+                await Coroutines.LatencyWait(5);
+                await Coroutines.ReactionWait();
+                LokiPoe.InGameState.NpcDialogUi.Continue();
+            }
 
             if (!await Dialog.WaitForPanel(Dialog.PanelType.NpcDialog))
                 return Results.TalkToNpcError.NpcDialogPanelDidNotOpen;

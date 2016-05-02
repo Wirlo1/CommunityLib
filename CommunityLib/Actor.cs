@@ -155,11 +155,24 @@ namespace CommunityLib
         /// <returns></returns>
         public static int NumberOfMobsBetween(NetworkObject start, NetworkObject end, int distanceFromPoint = 5, bool dontLeaveFrame = false)
         {
+            return NumberOfMobsBetween(start.Position, end.Position, distanceFromPoint, dontLeaveFrame);
+        }
+
+        /// <summary>
+        /// Returns the number of mobs between 2 points
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="distanceFromPoint"></param>
+        /// <param name="dontLeaveFrame">Should the current frame not be left?</param>
+        /// <returns></returns>
+        public static int NumberOfMobsBetween(Vector2i start, Vector2i end, int distanceFromPoint = 5, bool dontLeaveFrame = false)
+        {
             var mobs = LokiPoe.ObjectManager.GetObjectsByType<Monster>().Where(d => d.IsActive).ToList();
             if (!mobs.Any())
                 return 0;
 
-            var path = ExilePather.GetPointsOnSegment(start.Position, end.Position, dontLeaveFrame);
+            var path = ExilePather.GetPointsOnSegment(start, end, dontLeaveFrame);
 
             var count = 0;
             for (var i = 0; i < path.Count; i += 10)
