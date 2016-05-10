@@ -84,7 +84,6 @@ namespace CommunityLib
         private static Results.NotificationResult Send(string uri, string postData = "", CredentialCache creds = null)
         {
             WebRequest request = WebRequest.Create(uri);
-            request.ContentLength = 0;
             request.ContentType = "application/x-www-form-urlencoded";
             request.Method = "POST";
 
