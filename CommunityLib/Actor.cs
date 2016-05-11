@@ -146,6 +146,37 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// Returns the number of mobs near a target.
+        /// </summary>
+        /// <param name="mpos"></param>
+        /// <param name="distance"></param>
+        /// <param name="dead"></param>
+        /// <returns></returns>
+        public static int NumberOfMobsNear(Vector2i mpos, float distance, bool dead = false)
+        {
+            var curCount = 0;
+
+            foreach (var mob in LokiPoe.ObjectManager.Objects.OfType<Monster>())
+            {
+                // If we're only checking for dead mobs... then... yeah...
+                if (dead)
+                {
+                    if (!mob.IsDead)
+                        continue;
+                }
+                else if (!mob.IsActive)
+                {
+                    continue;
+                }
+
+                if (mob.Position.Distance(mpos) < distance)
+                    curCount++;
+            }
+
+            return curCount;
+        }
+
+        /// <summary>
         /// Returns the number of mobs between 2 points
         /// </summary>
         /// <param name="start"></param>
@@ -155,11 +186,24 @@ namespace CommunityLib
         /// <returns></returns>
         public static int NumberOfMobsBetween(NetworkObject start, NetworkObject end, int distanceFromPoint = 5, bool dontLeaveFrame = false)
         {
+            return NumberOfMobsBetween(start.Position, end.Position, distanceFromPoint, dontLeaveFrame);
+        }
+
+        /// <summary>
+        /// Returns the number of mobs between 2 points
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="end"></param>
+        /// <param name="distanceFromPoint"></param>
+        /// <param name="dontLeaveFrame">Should the current frame not be left?</param>
+        /// <returns></returns>
+        public static int NumberOfMobsBetween(Vector2i start, Vector2i end, int distanceFromPoint = 5, bool dontLeaveFrame = false)
+        {
             var mobs = LokiPoe.ObjectManager.GetObjectsByType<Monster>().Where(d => d.IsActive).ToList();
             if (!mobs.Any())
                 return 0;
 
-            var path = ExilePather.GetPointsOnSegment(start.Position, end.Position, dontLeaveFrame);
+            var path = ExilePather.GetPointsOnSegment(start, end, dontLeaveFrame);
 
             var count = 0;
             for (var i = 0; i < path.Count; i += 10)
