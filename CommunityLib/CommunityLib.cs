@@ -42,18 +42,21 @@ namespace CommunityLib
                 BotManager.Stop(true);
             }
 
+            AreaStateCache.Start();
+
             Log.DebugFormat("[{0}] Starting", Name);
         }
 
         public void Tick()
         {
-            
+            AreaStateCache.Tick();
         }
 
         public void Stop()
         {
             Log.DebugFormat("[{0}] Stopped", Name);
             Data.ItemsInStashAlreadyCached = false;
+            AreaStateCache.Stop();
         }
 
         #endregion
@@ -142,6 +145,9 @@ namespace CommunityLib
 
         public object Execute(string name, params dynamic[] param)
         {
+            if (name == "communitylib_get_current_area_state_cache")
+                return AreaStateCache.Current;
+
             return null;
         }
 
