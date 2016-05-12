@@ -94,7 +94,7 @@ namespace CommunityLib
 
         public void Initialize()
         {
-            Install();
+            //Install();
             Log.DebugFormat("[{0}] Initialized", Name);
         }
 
