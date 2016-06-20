@@ -231,16 +231,16 @@ namespace CommunityLib
         /// <returns>SwitchToTab result enum entry</returns>
         public static async Task<SwitchToTabResult> GoToNextTab(bool guild = false)
         {
-            var opened = guild ? LokiPoe.InGameState.GuildStashUi.IsOpened : StashUI.IsOpened;
+            var opened = guild ? GuildStashUI.IsOpened : StashUI.IsOpened;
             if (!opened)
                 return SwitchToTabResult.UiNotOpen;
 
-            var lastTab = guild ? LokiPoe.InGameState.GuildStashUi.TabControl.IsOnLastTab : StashUI.TabControl.IsOnLastTab;
+            var lastTab = guild ? GuildStashUI.TabControl.IsOnLastTab : StashUI.TabControl.IsOnLastTab;
             if (lastTab)
                 return SwitchToTabResult.NoMoreTabs;
 
-            var currentId = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo.InventoryId : StashUI.StashTabInfo.InventoryId;
-            var err = guild ? LokiPoe.InGameState.GuildStashUi.TabControl.NextTabKeyboard() : StashUI.TabControl.NextTabKeyboard();
+            var currentId = guild ? GuildStashUI.StashTabInfo.InventoryId : StashUI.StashTabInfo.InventoryId;
+            var err = guild ? GuildStashUI.TabControl.NextTabKeyboard() : StashUI.TabControl.NextTabKeyboard();
             if (err != SwitchToTabResult.None)
                 return err;
 
@@ -314,19 +314,19 @@ namespace CommunityLib
         public static async Task<bool> WaitForStashTabChange(int lastId = -1, int timeout = 10000, bool guild = false)
         {
             var sw = Stopwatch.StartNew();
-            var invTab = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo : StashUI.StashTabInfo;
+            var invTab = guild ? GuildStashUI.StashTabInfo : StashUI.StashTabInfo;
             while (invTab == null || invTab.InventoryId == lastId)
             {
                 await Coroutine.Sleep(1);
 
                 if (guild)
-                    if (!LokiPoe.InGameState.GuildStashUi.IsOpened)
+                    if (!GuildStashUI.IsOpened)
                         return false;
                 else
                     if (!StashUI.IsOpened)
                         return false;
 
-                invTab = guild ? LokiPoe.InGameState.GuildStashUi.StashTabInfo : StashUI.StashTabInfo;
+                invTab = guild ? GuildStashUI.StashTabInfo : StashUI.StashTabInfo;
                 if (sw.ElapsedMilliseconds > timeout)
                     return false;
             }

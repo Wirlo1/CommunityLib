@@ -66,7 +66,7 @@ namespace CommunityLib
         public string Name => "CommunityLib";
         public string Author => "Community ! ofc";
         public string Description => "Acts as a \"Database\" of generic functions you can use in any plugins";
-        public string Version => "0.0.0.3";
+        public string Version => "0.0.0.4";
 
         #endregion
 

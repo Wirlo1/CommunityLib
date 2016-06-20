@@ -70,8 +70,33 @@ namespace CommunityLib
             return true;
         }
 
+        public static void Disable(string name)
+        {
+            var task = CurrentTaskManager.GetTaskByName(name);
+            if (task != null)
+                Disable(task);
+        }
+        public static void Disable(ITask task)
+        {
+            CurrentTaskManager.Disable(task);
+        }
+        public static void Enable(string name)
+        {
+            var task = CurrentTaskManager.GetTaskByName(name);
+            if (task != null)
+                Enable(task);
+        }
+        public static void Enable(ITask task)
+        {
+            CurrentTaskManager.Enable(task);
+        }
+
         public static void RemoveTask(string name, bool stoponerror = true)
         {
+            //Just return if there is no task like this
+            if (!Exists(name))
+                return;
+
             if (!CurrentTaskManager.Remove(name))
             {
                 if (stoponerror)

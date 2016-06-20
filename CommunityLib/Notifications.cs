@@ -85,6 +85,7 @@ namespace CommunityLib
         {
             WebRequest request = WebRequest.Create(uri);
             request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = postData.Length;
             request.Method = "POST";
 
             if (creds != null)

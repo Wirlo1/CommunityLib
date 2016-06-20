@@ -210,8 +210,10 @@ namespace CommunityLib
         /// the npc must be in spawn range, otherwise the coroutine will fail. The movement is done without returning,
         /// so this should be carefully used when not in town.
         /// </summary>
+        /// <param name="name">Name of the NPC to interact with</param>
+        /// <param name="skipTalk">Should the bot skip all the dialog NPC's have before the dialog panel appears"</param>
         /// <returns>An OpenStashError that describes the result.</returns>
-        public static async Task<Results.TalkToNpcError> TalkToNpc(string name)
+        public static async Task<Results.TalkToNpcError> TalkToNpc(string name, bool skipTalk = true)
         {
             await Coroutines.CloseBlockingWindows();
 
@@ -247,6 +249,24 @@ namespace CommunityLib
 
             if (!await InteractWith(npc))
                 return Results.TalkToNpcError.InteractFailed;
+
+            // Clicking continue if NPC is blablaing (xD)
+            while (skipTalk && LokiPoe.InGameState.NpcDialogUi.DialogDepth != 1)
+            {
+                if (LokiPoe.InGameState.NpcDialogUi.DialogDepth == 2)
+                {
+                    CommunityLib.Log.DebugFormat("[CommunityLib][TalkToNpc] Now closing a dialog/reward window.");
+                    LokiPoe.Input.SimulateKeyEvent(Keys.Escape, true, false, false);
+                    // Give the client enough time to close the gui itself. It waits for the server to show the new one.
+                    await Coroutine.Sleep(LokiPoe.Random.Next(800, 1000));
+                    await Coroutines.ReactionWait();
+                }
+                else
+                {
+                    CommunityLib.Log.InfoFormat("[CommunityLib][TalkToNpc] Waiting for the Npc window to open.");
+                    await Coroutines.ReactionWait();
+                }
+            }
 
             if (!await Dialog.WaitForPanel(Dialog.PanelType.NpcDialog))
                 return Results.TalkToNpcError.NpcDialogPanelDidNotOpen;
@@ -397,7 +417,7 @@ namespace CommunityLib
             }
 
             var pos = ExilePather.FastWalkablePositionFor(portal);
-            CommunityLib.Log.DebugFormat($"[TakeClosestPortal] The portal was found at {pos}.");
+            CommunityLib.Log.Debug($"[TakeClosestPortal] The portal was found at {pos}.");
 
             if (!await Navigation.MoveToLocation(pos, 5, 10000, () => false))
                 return false;
@@ -407,15 +427,18 @@ namespace CommunityLib
             // Try to interact 3 times.
             for (var i = 0; i < 3; i++)
             {
+                if (LokiPoe.Me.IsDead)
+                    break;
+
                 await Coroutines.FinishCurrentAction();
 
-                CommunityLib.Log.DebugFormat($"[TakeClosestPortal] The portal to interact with is {portal.Id} at {pos}.");
+                CommunityLib.Log.Debug($"[TakeClosestPortal] The portal to interact with is {portal.Id} at {pos}.");
 
                 if (await InteractWith(portal))
                 {
                     if (await Areas.WaitForAreaChange(hash))
                     {
-                        CommunityLib.Log.DebugFormat("[TakeClosestPortal] The portal has been taken.");
+                        CommunityLib.Log.Debug("[TakeClosestPortal] The portal has been taken.");
                         return true;
                     }
                 }

@@ -111,6 +111,66 @@ namespace CommunityLib
         }
 
         /// <summary>
+        /// Returns if there are any mobs near a target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="distance"></param>
+        /// <param name="dead"></param>
+        /// <returns></returns>
+        public static bool MobsNear(NetworkObject target, float distance, bool dead = false)
+        {
+            var mpos = target.Position;
+
+            foreach (var mob in LokiPoe.ObjectManager.Objects.OfType<Monster>().Where(mob => mob.Id != target.Id))
+            {
+                // If we're only checking for dead mobs... then... yeah...
+                if (dead)
+                {
+                    if (!mob.IsDead)
+                        continue;
+                }
+                else if (!mob.IsActive)
+                {
+                    continue;
+                }
+
+                if (mob.Position.Distance(mpos) < distance)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Returns if there are any mobs near a target
+        /// </summary>
+        /// <param name="mpos"></param>
+        /// <param name="distance"></param>
+        /// <param name="dead"></param>
+        /// <returns></returns>
+        public static bool MobsNear(Vector2i mpos, float distance, bool dead = false)
+        {
+            foreach (var mob in LokiPoe.ObjectManager.Objects.OfType<Monster>())
+            {
+                // If we're only checking for dead mobs... then... yeah...
+                if (dead)
+                {
+                    if (!mob.IsDead)
+                        continue;
+                }
+                else if (!mob.IsActive)
+                {
+                    continue;
+                }
+
+                if (mob.Position.Distance(mpos) < distance)
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Returns the number of mobs near a target.
         /// </summary>
         /// <param name="target"></param>

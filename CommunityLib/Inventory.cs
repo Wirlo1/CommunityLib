@@ -308,6 +308,10 @@ namespace CommunityLib
 
                 // Apply item on cursor to the destination item
                 err = destinationWrapper.ApplyCursorTo(destinationItem.LocalId);
+                //Destination is in utility currency slot?		
+                if (err == ApplyCursorResult.Unsupported)
+                    err = destinationWrapper.ApplyCursorTo();
+
                 // If the error is different of None, break the execution and return the error
                 if (err != ApplyCursorResult.None)
                     break;

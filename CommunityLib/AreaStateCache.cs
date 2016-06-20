@@ -20,7 +20,7 @@ namespace CommunityLib
         /// <summary>
         /// When set to true, AreaStateCache will not automatically create a GridExplorer instance for the current area.
         /// </summary>
-        public static bool DisableDefaultExplorer;
+        //public static bool DisableDefaultExplorer;
 
         /// <summary>Should items be looted based on being visible?</summary>
         public static bool LootVisibleItemsOverride
@@ -282,7 +282,7 @@ namespace CommunityLib
         /// <summary>
         /// The explorer for the current area.
         /// </summary>
-        public IExplorer Explorer { get; set; }
+        //public IExplorer Explorer { get; set; }
 
         /// <summary> </summary>
         public uint Hash { get; private set; }
@@ -485,14 +485,14 @@ namespace CommunityLib
                 ? ExilePather.FastWalkablePositionFor(portal)
                 : Vector2i.Zero;
 
-            if (!DisableDefaultExplorer)
-            {
-                var ge = new GridExplorer
-                {
-                    AutoResetOnAreaChange = false
-                };
-                Explorer = ge;
-            }
+            //if (!DisableDefaultExplorer)
+            //{
+            //    var ge = new GridExplorer
+            //    {
+            //        AutoResetOnAreaChange = false
+            //    };
+            //    Explorer = ge;
+            //}
         }
 
         /// <summary>
@@ -542,10 +542,10 @@ namespace CommunityLib
             _chestThrottle.Reset();
             _questThrottle.Reset();
             _itemThrottle.Reset();
-            if (Explorer != null)
-            {
-                Explorer.Start();
-            }
+            //if (Explorer != null)
+            //{
+            //    Explorer.Start();
+            //}
         }
 
         /// <summary>The bot Tick event.</summary>
@@ -587,10 +587,10 @@ namespace CommunityLib
             // Unload other instances of the same area we're currently in.
             if (WorldArea == Current.WorldArea)
             {
-                if (Explorer != null)
-                {
-                    Explorer.Unload();
-                }
+                //if (Explorer != null)
+                //{
+                //    Explorer.Unload();
+                //}
                 return true;
             }
 
@@ -606,10 +606,10 @@ namespace CommunityLib
                 (WorldArea.IsHideoutArea && Current.WorldArea.IsHideoutArea)
                 )
             {
-                if (Explorer != null)
-                {
-                    Explorer.Unload();
-                }
+                //if (Explorer != null)
+                //{
+                //    Explorer.Unload();
+                //}
                 return true;
             }
 
@@ -618,10 +618,10 @@ namespace CommunityLib
 
         private void OnTick()
         {
-            if (Explorer != null)
-            {
-                Explorer.Tick();
-            }
+            //if (Explorer != null)
+            //{
+            //    Explorer.Tick();
+            //}
 
             var update = false;
             if (!_itemThrottle.IsRunning)
@@ -1022,10 +1022,10 @@ namespace CommunityLib
             _chestThrottle.Reset();
             _timeInInstance.Stop();
             _timeInArea.Stop();
-            if (Explorer != null)
-            {
-                Explorer.Stop();
-            }
+            //if (Explorer != null)
+            //{
+            //    Explorer.Stop();
+            //}
         }
 
         /// <summary>An event handler for when a location is added.</summary>

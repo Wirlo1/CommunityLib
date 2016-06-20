@@ -95,24 +95,13 @@ namespace CommunityLib
         /// <returns>boolean</returns>
         public static async Task<bool> TalkToNpc(string npcName)
         {
-            await Coroutines.CloseBlockingWindows();
-            await LibCoroutines.TalkToNpc(npcName);
+            //await Coroutines.CloseBlockingWindows();
+            var ret = await LibCoroutines.TalkToNpc(npcName, true);
 
-            // Clicking continue if NPC is blablaing (xD)
-            while (LokiPoe.InGameState.NpcDialogUi.DialogDepth == 2)
-            {
-                await Coroutines.LatencyWait(5);
-                await Coroutines.ReactionWait();
-                LokiPoe.InGameState.NpcDialogUi.Continue();
-            }
-
-            // Wait for the window to appear
-            var ret = await WaitForPanel(PanelType.NpcDialog);
-            await Coroutine.Sleep(300);
             await Coroutines.LatencyWait();
             await Coroutines.ReactionWait();
 
-            return ret;
+            return ret == Results.TalkToNpcError.None;
         }
 
         /// <summary>

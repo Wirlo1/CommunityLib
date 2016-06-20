@@ -141,13 +141,31 @@ namespace CommunityLib
         /// <param name="difficulty"></param>
         /// <param name="newInstance">Do you want to open new instance?</param>
         /// <returns></returns>
-        public static async Task<LokiPoe.InGameState.TakeWaypointResult> TakeWaypoint( string name, Difficulty difficulty = Difficulty.Unknown, bool newInstance = false )
+        public static async Task<LokiPoe.InGameState.TakeWaypointResult> TakeWaypoint(string name, Difficulty difficulty = Difficulty.Unknown, bool newInstance = false)
         {
             //We are already there
-            if (LokiPoe.LocalData.WorldArea.Name == name)
+            if (LokiPoe.LocalData.WorldArea.Name == name && LokiPoe.LocalData.WorldArea.Difficulty == difficulty && !newInstance)
                 return LokiPoe.InGameState.TakeWaypointResult.None;
 
             //await Coroutines.CloseBlockingWindows();
+
+            // First try of fastgotohideout instead of LokiPoe.InGameState.WorldUi.GoToHideout()
+            if (name.Equals("Hideout", StringComparison.OrdinalIgnoreCase) && (LokiPoe.Me.IsInHideout || LokiPoe.Me.IsInTown))
+            {
+                await Coroutines.CloseBlockingWindows();
+                var res = await FastGoToHideout();
+
+                switch (res)
+                {
+                    case Results.FastGoToHideoutResult.None:
+                        return LokiPoe.InGameState.TakeWaypointResult.None;
+                    case Results.FastGoToHideoutResult.NoHideout:
+                        return LokiPoe.InGameState.TakeWaypointResult.AreaNotFound;
+                    case Results.FastGoToHideoutResult.NotInGame:
+                        return LokiPoe.InGameState.TakeWaypointResult.UiNotOpen;
+                        //if we timed out then try to use default method like below
+                }
+            }
 
             if (!LokiPoe.InGameState.WorldUi.IsOpened)
             {
@@ -164,9 +182,9 @@ namespace CommunityLib
             CommunityLib.Log.InfoFormat($"[TakeWaypoint] Going to {name} at {difficulty}.");
 
             var areaHash = LokiPoe.LocalData.AreaHash;
-            var taken = name.Equals("Hideout", StringComparison.OrdinalIgnoreCase) 
-                ? LokiPoe.InGameState.WorldUi.GoToHideout() 
-                : LokiPoe.InGameState.WorldUi.TakeWaypoint(GetZoneId(difficulty.ToString(), name), newInstance, Int32.MaxValue);
+            var taken = name.Equals("Hideout", StringComparison.OrdinalIgnoreCase)
+                ? LokiPoe.InGameState.WorldUi.GoToHideout()
+                : LokiPoe.InGameState.WorldUi.TakeWaypoint(LokiPoe.GetZoneId(difficulty.ToString(), name), newInstance, Int32.MaxValue);
 
             if (taken != LokiPoe.InGameState.TakeWaypointResult.None)
             {
@@ -176,42 +194,6 @@ namespace CommunityLib
 
             var awaited = await Areas.WaitForAreaChange(areaHash);
             return awaited ? LokiPoe.InGameState.TakeWaypointResult.None : LokiPoe.InGameState.TakeWaypointResult.CouldNotJoinNewInstance;
-        }
-
-        public static string GetZoneId(string difficulty, string zoneName)
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-            string str1 = difficulty.ToLowerInvariant();
-            if (str1 == "normal")
-                stringBuilder.Append("1_");
-            else if (str1 == "cruel")
-                stringBuilder.Append("2_");
-            else
-                stringBuilder.Append("3_");
-             
-
-            if (zoneName == "Lioneye's Watch")
-            {
-                stringBuilder.Append("1_town");
-                return stringBuilder.ToString();
-            }
-            if (zoneName == "The Forest Encampment")
-            {
-                stringBuilder.Append("2_town");
-                return stringBuilder.ToString();
-            }
-            if (zoneName == "The Sarn Encampment")
-            {
-                stringBuilder.Append("3_town");
-                return stringBuilder.ToString();
-            }
-            if (zoneName == "Highgate")
-            {
-                stringBuilder.Append("4_town");
-                return stringBuilder.ToString();
-            }
-
-            return LokiPoe.GetZoneId(difficulty, zoneName);
         }
     }
 }

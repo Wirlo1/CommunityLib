@@ -17,7 +17,7 @@ namespace CommunityLib
         public static T GenericExecute<T>(string pluginName, string method, dynamic[] param)
         {
             // We gather the plugin considering the name of this one
-            var plugin = PluginManager.Plugins.FirstOrDefault(x => x.Name == pluginName);
+            var plugin = PluginManager.EnabledPlugins.FirstOrDefault(x => x.Name == pluginName);
             // If the plugin is null, return the default value of the desired type
             if (plugin == null) return (T)Convert.ChangeType(default(T), typeof(T));
             // Else, grab execute from the plugin, wit method and params
