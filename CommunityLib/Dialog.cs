@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Buddy.Coroutines;
 using Loki.Bot;
 using Loki.Game;
 
@@ -96,7 +95,7 @@ namespace CommunityLib
         public static async Task<bool> TalkToNpc(string npcName)
         {
             //await Coroutines.CloseBlockingWindows();
-            var ret = await LibCoroutines.TalkToNpc(npcName, true);
+            var ret = await LibCoroutines.TalkToNpc(npcName);
 
             await Coroutines.LatencyWait();
             await Coroutines.ReactionWait();

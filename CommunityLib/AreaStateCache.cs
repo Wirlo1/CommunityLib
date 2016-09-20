@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using log4net;
 using Loki.Bot;
 using Loki.Bot.Pathfinding;

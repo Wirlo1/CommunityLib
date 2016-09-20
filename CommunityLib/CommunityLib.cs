@@ -39,7 +39,7 @@ namespace CommunityLib
                 MessageBox.Show(
                     $"{Name} self-install ran successfully and requires a bot restart, bot won't start until it's done",
                     $"{Name} installed successfully!", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                BotManager.Stop(true);
+                BotManager.Stop();
             }
 
             AreaStateCache.Start();
@@ -49,7 +49,7 @@ namespace CommunityLib
 
         public void Tick()
         {
-            AreaStateCache.Tick();
+            //AreaStateCache.Tick();
         }
 
         public void Stop()
