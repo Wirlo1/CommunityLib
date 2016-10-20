@@ -418,7 +418,7 @@ namespace CommunityLib
 
             LocationBottomRight = new Vector(item.LocationBottomRight.X, item.LocationBottomRight.Y);
             LocationTopLeft = new Vector(item.LocationTopLeft.X, item.LocationTopLeft.Y);
-            MapLevel = item.ItemLevel;
+            MapLevel = item.MapLevel;
             MaxChaosDamage = item.MaxChaosDamage;
             MaxColdDamage = item.MaxColdDamage;
             MaxDamage = item.MaxDamage;
