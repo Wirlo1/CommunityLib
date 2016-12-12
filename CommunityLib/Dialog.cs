@@ -21,33 +21,52 @@ namespace CommunityLib
         /// <summary>
         /// Opens the NPC buy Panel.
         /// </summary>
-        /// <param name="npcName"> If the parameter is null or empty, default NPC name will be used</param>
-        /// <returns></returns>
-        public static async Task<bool> OpenNpcBuyPanel( string npcName = "" )
+        /// <param name="npcName">If the parameter is null or empty, default NPC name will be used</param>
+        /// <param name="maxTries">Number of attempts to open panel before returning false</param>
+        /// <returns>boolean</returns>
+        public static async Task<bool> OpenNpcBuyPanel(string npcName = "", int maxTries = 3)
         {
             if ( string.IsNullOrEmpty(npcName) )
                 npcName = Actor.TownNpcName;
 
             if (npcName == "")
             {
-                CommunityLib.Log.ErrorFormat("[OpenNpcBuyPanel] TownNpcName returned an empty string.");
+                CommunityLib.Log.ErrorFormat("[CommunityLib][OpenNpcBuyPanel] TownNpcName returned an empty string.");
                 return false;
             }
 
-            if (!await TalkToNpc(npcName))
-                return false;
-
-            var isBuyDialogOpen = LokiPoe.InGameState.NpcDialogUi.PurchaseItems();
-            await WaitForPanel(PanelType.Purchase);
-
-            if (isBuyDialogOpen != LokiPoe.InGameState.ConverseResult.None)
+            int tries = 1;
+            while (true)
             {
-                CommunityLib.Log.ErrorFormat("[OpenNpcBuyPanel] Fail open buy dialog. Error: {0}", isBuyDialogOpen);
-                return false;
+                if (tries > maxTries)
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcBuyPanel] Failed to open {npcName}'s BuyPanel after {tries} attempts, returning false");
+                    return false;
+                }
+
+                if (!await TalkToNpc(npcName))
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcBuyPanel] Failed to talk to {npcName} (Attempt {tries}/{maxTries})");
+                    tries++;
+                    await Coroutines.LatencyWait();
+                    continue;
+                }
+
+                var isBuyDialogOpen = LokiPoe.InGameState.NpcDialogUi.PurchaseItems();
+                await WaitForPanel(PanelType.Purchase);
+
+                if (isBuyDialogOpen != LokiPoe.InGameState.ConverseResult.None)
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcBuyPanel] Failed open buy dialog. Error: {isBuyDialogOpen} (Attempt {tries}/{maxTries})");
+                    tries++;
+                    await Coroutines.LatencyWait();
+                    continue;
+                }
+
+                break;
             }
 
-            CommunityLib.Log.DebugFormat("[OpenNpcBuyPanel] {0}'s Buy Panel opened successfully", npcName);
-
+            CommunityLib.Log.DebugFormat($"[CommunityLib][OpenNpcBuyPanel] {npcName}'s Buy Panel opened successfully");
             return true;
         }
 
@@ -56,7 +75,7 @@ namespace CommunityLib
         /// </summary>
         /// <param name="npcName"> If the parameter is null or empty, default NPC name will be used</param>
         /// <returns></returns>
-        public static async Task<bool> OpenNpcSellPanel( string npcName = "" )
+        public static async Task<bool> OpenNpcSellPanel( string npcName = "", int maxTries = 3)
         {
             if (string.IsNullOrEmpty(npcName))
                 npcName = Actor.TownNpcName;
@@ -67,23 +86,38 @@ namespace CommunityLib
                 return false;
             }
 
-            if (!await TalkToNpc(npcName))
+            int tries = 1;
+            while (true)
             {
-                CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcSellPanel] Failed to talk to {npcName}");
-                return false;
+                if (tries > maxTries)
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcSellPanel] Failed to open {npcName}'s SellPanel after {tries} attempts, returning false");
+                    return false;
+                }
+
+                if (!await TalkToNpc(npcName))
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcSellPanel] Failed to talk to {npcName} (Attempt {tries}/{maxTries})");
+                    tries++;
+                    await Coroutines.LatencyWait();
+                    continue;
+                }
+
+                var isSellDialogOpen = LokiPoe.InGameState.NpcDialogUi.SellItems();
+                await WaitForPanel(PanelType.Sell);
+
+                if (isSellDialogOpen != LokiPoe.InGameState.ConverseResult.None)
+                {
+                    CommunityLib.Log.ErrorFormat($"[CommunityLib][OpenNpcSellPanel] Fail open sell dialog. Error: {isSellDialogOpen} (Attempt {tries}/{maxTries})");
+                    tries++;
+                    await Coroutines.LatencyWait();
+                    continue;
+                }
+
+                break;
             }
 
-            var isSellDialogOpen = LokiPoe.InGameState.NpcDialogUi.SellItems();
-            await WaitForPanel(PanelType.Sell);
-
-            if (isSellDialogOpen != LokiPoe.InGameState.ConverseResult.None)
-            {
-                CommunityLib.Log.ErrorFormat("[{0}] Fail open sell dialog. Error: {1}", "OpenNpcSellPanel", isSellDialogOpen);
-                return false;
-            }
-
-            CommunityLib.Log.DebugFormat("[{0}] {1}'s Sell Panel opened successfully", "OpenNpcSellPanel", npcName);
-
+            CommunityLib.Log.DebugFormat($"[CommunityLib][OpenNpcSellPanel] {npcName}'s Sell Panel opened successfully");
             return true;
         }
 

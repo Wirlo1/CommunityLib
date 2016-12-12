@@ -25,14 +25,16 @@ namespace CommunityLib
         {
             //We can't go futher if the stash is not opened
             var canGo = guild
-                ? !GuildStashUI.IsOpened || GuildStashUI.StashTabInfo.IsPublic || GuildStashUI.StashTabInfo.IsRemoveOnly
-                : !StashUI.IsOpened || StashUI.StashTabInfo.IsPublic || StashUI.StashTabInfo.IsRemoveOnly;
+                ? !GuildStashUI.IsOpened || GuildStashUI.StashTabInfo.IsPublic || GuildStashUI.StashTabInfo.IsRemoveOnly ||
+                  StashUI.StashTabInfo.IsPremiumDivination
+                : !StashUI.IsOpened || StashUI.StashTabInfo.IsPublic || StashUI.StashTabInfo.IsRemoveOnly ||
+                  StashUI.StashTabInfo.IsPremiumDivination;
 
             if (canGo)
                 return false;
 
             //If it's regular tab then it's rather simple
-            if (guild || !StashUI.StashTabInfo.IsPremiumCurrency)
+            if (guild || (!StashUI.StashTabInfo.IsPremiumCurrency && !StashUI.StashTabInfo.IsPremiumEssence))
             {
                 int column, row;
                 return guild
@@ -40,29 +42,59 @@ namespace CommunityLib
                 : StashUI.InventoryControl.Inventory.CanFitItem(item, out column, out row);
             }
 
-            //We can only fit stackables in the currency tab
-            if (item.MaxStackCount <= 1)
-                return false;
-
-            var wrps = new List<InventoryControlWrapper>();
-            //Wrapper especially for that one thing
-            var wrapper = StashUI.GetInventoryControlForMetadata(item.Metadata, false);
-            if (wrapper != null)
-                wrps.Add(wrapper);
-
-            StashUI.CurrencyTabInventoryControlsMisc.ForEach(w => wrps.Add(w));
-
-            foreach (var wrap in wrps)
+            if (StashUI.StashTabInfo.IsPremiumCurrency)
             {
-                //There's no item, it's free to use
-                if (wrap.CurrencyTabItem == null)
-                    return true;
+                //We can only fit stackables in the currency tab
+                if (item.MaxStackCount <= 1)
+                    return false;
 
-                //We can fit in here.
-                var freeSpace = wrap.CurrencyTabItem.MaxCurrencyTabStackCount - wrap.CurrencyTabItem.StackCount;
-                if (freeSpace - item.StackCount >= 0)
-                    return true;
+                var wrps = new List<InventoryControlWrapper>();
+                //Wrapper especially for that one thing
+                var wrapper = StashUI.CurrencyTab.GetInventoryControlForMetadata(item.Metadata);
+                if (wrapper != null)
+                    wrps.Add(wrapper);
+
+                StashUI.CurrencyTabInventoryControlsMisc.ForEach(w => wrps.Add(w));
+
+                foreach (var wrap in wrps)
+                {
+                    //There's no item, it's free to use
+                    if (wrap.CustomTabItem == null)
+                        return true;
+
+                    //We can fit in here.
+                    var freeSpace = wrap.CustomTabItem.MaxCurrencyTabStackCount - wrap.CustomTabItem.StackCount;
+                    if (freeSpace - item.StackCount >= 0)
+                        return true;
+                }
             }
+            else if (StashUI.StashTabInfo.IsPremiumEssence)
+            {
+                //We can only fit stackables in the essence tab
+                if (item.MaxStackCount <= 1)
+                    return false;
+
+                var wrps = new List<InventoryControlWrapper>();
+                //Wrapper especially for that one thing
+                var wrapper = StashUI.EssenceTab.GetInventoryControlForMetadata(item.Metadata);
+                if (wrapper != null)
+                    wrps.Add(wrapper);
+
+                //StashUI.EssenceTab.NonEssences.ForEach(w => wrps.Add(w));
+
+                foreach (var wrap in wrps)
+                {
+                    //There's no item, it's free to use
+                    if (wrap.CustomTabItem == null)
+                        return true;
+
+                    //We can fit in here.
+                    var freeSpace = wrap.CustomTabItem.MaxCurrencyTabStackCount - wrap.CustomTabItem.StackCount;
+                    if (freeSpace - item.StackCount >= 0)
+                        return true;
+                }
+            }
+            
 
             return false;
         }
@@ -84,8 +116,13 @@ namespace CommunityLib
         /// <returns>StashItem</returns>
         public static CachedItemObject FindItemInStashTab(CommunityLib.FindItemDelegate condition)
         {
+            if (StashUI.StashTabInfo.IsPremiumDivination)
+            {
+                //Cant take item from Div cards tab.
+                return null;
+            }
             //If it's regular tab then it's rather simple
-            if (!StashUI.StashTabInfo.IsPremiumCurrency)
+            if (!StashUI.StashTabInfo.IsPremiumCurrency && !StashUI.StashTabInfo.IsPremiumEssence)
             {
                 // Gather the first item matching the condition
                 var item = StashUI.InventoryControl.Inventory.Items.FirstOrDefault(d => condition(d));
@@ -95,10 +132,19 @@ namespace CommunityLib
             }
 
             //Premium stash tab
-            else
+
+            else if(StashUI.StashTabInfo.IsPremiumCurrency)
             {
-                var wrapper = StashUI.CurrencyTabInventoryControls.FirstOrDefault(d => d.CurrencyTabItem != null && condition(d.CurrencyTabItem));
-                var item = wrapper?.CurrencyTabItem;
+                var wrapper = StashUI.CurrencyTab.All.FirstOrDefault(d => d.CustomTabItem != null && condition(d.CustomTabItem));
+                var item = wrapper?.CustomTabItem;
+                if (item != null)
+                    return new CachedItemObject(wrapper, item, StashUI.TabControl.CurrentTabName);
+            }
+            //Esence shard tab
+            else if (StashUI.StashTabInfo.IsPremiumEssence)
+            {
+                var wrapper = StashUI.EssenceTab.All.FirstOrDefault(d => d.CustomTabItem != null && condition(d.CustomTabItem));
+                var item = wrapper?.CustomTabItem;
                 if (item != null)
                     return new CachedItemObject(wrapper, item, StashUI.TabControl.CurrentTabName);
             }
@@ -124,22 +170,37 @@ namespace CommunityLib
         public static List<CachedItemObject> FindItemsInStashTab(CommunityLib.FindItemDelegate condition)
         {
             var ret = new List<CachedItemObject>();
+            if (StashUI.StashTabInfo.IsPremiumDivination)
+            {
+                //Cant take item from Div cards tab.
+                return null;
+            }
             //If it's regular tab then it's rather simple
-            if (!StashUI.StashTabInfo.IsPremiumCurrency)
+            if (!StashUI.StashTabInfo.IsPremiumCurrency && !StashUI.StashTabInfo.IsPremiumEssence)
             {
                 // Gather the first item matching the condition
                 var items = StashUI.InventoryControl.Inventory.Items.Where(d => condition(d)).ToList();
-                foreach (var item in items)
-                    ret.Add(new CachedItemObject(StashUI.InventoryControl, item, StashUI.TabControl.CurrentTabName));
+                ret.AddRange(items.Select(item => new CachedItemObject(StashUI.InventoryControl, item, StashUI.TabControl.CurrentTabName)));
             }
 
             //Premium stash tab
-            else
+            else if (StashUI.StashTabInfo.IsPremiumCurrency)
             {
-                var wrappers = StashUI.CurrencyTabInventoryControls.Where(d => d.CurrencyTabItem != null && condition(d.CurrencyTabItem)).ToList();
+                var wrappers = StashUI.CurrencyTab.All.Where(d => d.CustomTabItem != null && condition(d.CustomTabItem)).ToList();
                 foreach (var wrapper in wrappers)
                 {
-                    var item = wrapper?.CurrencyTabItem;
+                    var item = wrapper?.CustomTabItem;
+                    if (item != null)
+                        ret.Add(new CachedItemObject(wrapper, item, StashUI.TabControl.CurrentTabName));
+                }
+            }
+            //Esence shard tab
+            else if (StashUI.StashTabInfo.IsPremiumEssence)
+            {
+                var wrappers = StashUI.EssenceTab.All.Where(d => d.CustomTabItem != null && condition(d.CustomTabItem)).ToList();
+                foreach (var wrapper in wrappers)
+                {
+                    var item = wrapper?.CustomTabItem;
                     if (item != null)
                         ret.Add(new CachedItemObject(wrapper, item, StashUI.TabControl.CurrentTabName));
                 }

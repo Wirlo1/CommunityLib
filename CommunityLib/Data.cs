@@ -153,13 +153,29 @@ namespace CommunityLib
                     goto NextTab;
                 }
 
+                //Civination Cards
+                if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumDivination)
+                {
+                    CommunityLib.Log.Info($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Divination cards Tab and is not gonna be cached");
+                    goto NextTab;
+                }
                 //Different handling for currency tabs
                 if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumCurrency)
                 {
-                    foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTabInventoryControls
-                        .Where(wrp => wrp.CurrencyTabItem != null))
+                    foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTab.All
+                        .Where(wrp => wrp.CustomTabItem != null))
                         CachedItemsInStash.Add( 
-                            new CachedItemObject(wrapper, wrapper.CurrencyTabItem, 
+                            new CachedItemObject(wrapper, wrapper.CustomTabItem, 
+                                LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
+                            );
+                }
+                //Essence shards
+                else if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumEssence)
+                {
+                    foreach (var wrapper in LokiPoe.InGameState.StashUi.EssenceTab.All
+                        .Where(wrp => wrp.CustomTabItem != null))
+                        CachedItemsInStash.Add(
+                            new CachedItemObject(wrapper, wrapper.CustomTabItem,
                                 LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                             );
                 }
@@ -263,27 +279,35 @@ namespace CommunityLib
                 CommunityLib.Log.Error($"[CommunityLib][UpdateSpecificTab] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is RemoveOnly and is not gonna be cached");
                 return false;
             }
-
+            //Civination Cards
+            if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumDivination)
+            {
+                CommunityLib.Log.Info($"[CommunityLib][UpdateItemsInStash] The tab \"{LokiPoe.InGameState.StashUi.TabControl.CurrentTabName}\" is Divination cards Tab and is not gonna be cached");
+                return false;
+            }
+            
             // Stash should be open, processing cached data in this tab
             // First remove every item in that one
             CachedItemsInStash.RemoveAll(i => i.TabName.Equals(tabName));
 
-            if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumCurrency)
+            if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumEssence)
             {
-                foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTabInventoryControls
-                    .Where(wrp => wrp.CurrencyTabItem != null))
+                foreach (var wrapper in LokiPoe.InGameState.StashUi.EssenceTab.All
+                    .Where(wrp => wrp.CustomTabItem != null))
                     CachedItemsInStash.Add(
-                        new CachedItemObject(wrapper, wrapper.CurrencyTabItem,
+                        new CachedItemObject(wrapper, wrapper.CustomTabItem,
                             LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
                         );
+            }
+            else if (LokiPoe.InGameState.StashUi.StashTabInfo.IsPremiumCurrency)
+            {
+                foreach (var wrapper in LokiPoe.InGameState.StashUi.CurrencyTab.All.Where(wrp => wrp.CustomTabItem != null))
+                    CachedItemsInStash.Add(new CachedItemObject(wrapper, wrapper.CustomTabItem, LokiPoe.InGameState.StashUi.TabControl.CurrentTabName));
             }
             else
             {
                 foreach (var item in LokiPoe.InGameState.StashUi.InventoryControl.Inventory.Items)
-                    CachedItemsInStash.Add(
-                        new CachedItemObject(LokiPoe.InGameState.StashUi.InventoryControl, item,
-                            LokiPoe.InGameState.StashUi.TabControl.CurrentTabName)
-                        );
+                    CachedItemsInStash.Add(new CachedItemObject(LokiPoe.InGameState.StashUi.InventoryControl, item,LokiPoe.InGameState.StashUi.TabControl.CurrentTabName));
             }
 
             //Await here is not wanted if we'll want to make fast re-caching the updated stash
