@@ -1,7 +1,8 @@
-﻿//!CompilerOption|AddRef|System.Web.dll
+//!CompilerOption|AddRef|System.Web.dll
 using System;
 using System.IO;
 using System.Net;
+using System.Threading;
 using System.Web;
 
 namespace CommunityLib
@@ -16,9 +17,20 @@ namespace CommunityLib
         /// <param name="ev">Event name</param>
         /// <param name="description">Event description</param>
         /// <param name="priority">Notification Priority</param>
-        /// <returns>NotificationResult enum entry</returns>
-        public static Results.NotificationResult Prowl(string apikey, string pluginName, string ev, string description, NotificationPriority priority)
+        /// <param name="onResult">If delegate provided will run async</param>
+        /// <returns>NotificationResult enum entry. Returns None if async</returns>
+        public static Results.NotificationResult Prowl(string apikey, string pluginName, string ev, string description, NotificationPriority priority, Action<Results.NotificationResult> onResult = null)
         {
+            if (onResult != null)
+            {
+                new Thread(()=>
+                {
+                    Results.NotificationResult res = Prowl(apikey, pluginName, ev, description, priority);
+                    onResult(res);
+                }).Start();
+                return Results.NotificationResult.None;
+            }
+
             if (!CheckApiToken(apikey))
                 return Results.NotificationResult.ApiKeyError;
 
@@ -40,9 +52,20 @@ namespace CommunityLib
         /// <param name="description">Message to send</param>
         /// <param name="ev">Title</param>
         /// <param name="p">Notification Priority</param>
-        /// <returns></returns>
-        public static Results.NotificationResult Pushover(string token, string apikey, string description, string ev, NotificationPriority p)
+        /// <param name="onResult">If delegate provided will run async</param>
+        /// <returns>NotificationResult enum entry. Returns None if async</returns>
+        public static Results.NotificationResult Pushover(string token, string apikey, string description, string ev, NotificationPriority p, Action<Results.NotificationResult> onResult = null)
         {
+            if (onResult != null)
+            {
+                new Thread(() =>
+                {
+                    Results.NotificationResult res = Pushover(token,apikey,description,ev,p);
+                    onResult(res);
+                }).Start();
+                return Results.NotificationResult.None;
+            }
+
             if (!CheckApiToken(token))
                 return Results.NotificationResult.TokenError;
 
@@ -65,9 +88,20 @@ namespace CommunityLib
         /// <param name="apikey"></param>
         /// <param name="description">Body of the notification</param>
         /// <param name="ev">Title of the notification</param>
-        /// <returns></returns>
-        public static Results.NotificationResult Pushbullet(string apikey, string description, string ev)
+        /// <param name="onResult">If delegate provided will run async</param>
+        /// <returns>NotificationResult enum entry. Returns None if async</returns>
+        public static Results.NotificationResult Pushbullet(string apikey, string description, string ev, Action<Results.NotificationResult> onResult = null)
         {
+            if (onResult != null)
+            {
+                new Thread(() =>
+                {
+                    Results.NotificationResult res = Pushbullet(apikey,description,ev);
+                    onResult(res);
+                }).Start();
+                return Results.NotificationResult.None;
+            }
+
             if (!CheckApiToken(apikey))
                 return Results.NotificationResult.ApiKeyError;
 
